@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>角度変換（10進法 ⇄ 60進法）</title>
+    <meta name="theme-color" content="#4f46e5">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⦿</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      html, body { height: 100%; background: #f9fafb; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- React 18 UMD + Babel (for JSX) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useMemo, useRef, useState, useEffect } = React;
+
+      function clamp(n, min, max) { return Math.min(Math.max(n ?? 0, min), max); }
+      function roundTo(n, digits = 6) { const p = Math.pow(10, digits); return Math.round(n * p) / p; }
+
+      function decimalToDMS(value, secPrecision = 2) {
+        if (value === "" || value === null || value === undefined || isNaN(Number(value))) {
+          return { sign: 1, d: "", m: "", s: "" };
+        }
+        const v = Number(value);
+        const sign = v < 0 ? -1 : 1;
+        let abs = Math.abs(v);
+        const d = Math.floor(abs);
+        abs = (abs - d) * 60;
+        const m = Math.floor(abs);
+        let s = (abs - m) * 60;
+        s = roundTo(s, secPrecision);
+        if (s >= 60) {
+          s -= 60;
+          if (m + 1 >= 60) {
+            return { sign, d: d + 1, m: 0, s: 0 };
+          } else {
+            return { sign, d, m: m + 1, s };
+          }
+        }
+        return { sign, d, m, s };
+      }
+
+      function dmsToDecimal(d, m, s) {
+        if (d === "" && m === "" && s === "") return "";
+        const dd = Number(d); const mm = Number(m); const ss = Number(s);
+        if ([d, m, s].some((x) => x === null || x === undefined)) return "";
+        if ([dd, mm, ss].some((x) => Number.isNaN(x))) return NaN;
+        const sign = dd < 0 ? -1 : 1; const D = Math.abs(dd);
+        if (mm < 0 || ss < 0) return NaN; if (mm >= 60 || ss >= 60) return NaN;
+        const dec = D + mm / 60 + ss / 3600;
+        return roundTo(sign * dec, 10);
+      }
+
+      function pad2(n) { return String(Math.floor(Math.abs(n))).padStart(2, "0"); }
+      function formatSeconds(s, precision) {
+        if (s === "" || s === null || s === undefined || isNaN(Number(s))) return "";
+        return Number(s).toFixed(precision);
+      }
+
+      // Safe copy: clipboard → execCommand → manual fallback
+      async function safeCopy(text) {
+        try {
+          if (typeof window !== "undefined" && window.isSecureContext && navigator?.clipboard?.writeText) {
+            await navigator.clipboard.writeText(String(text));
+            return { ok: true, mode: "clipboard" };
+          }
+        } catch (_) { /* fall through */ }
+        try {
+          const el = document.createElement("textarea");
+          el.value = String(text);
+          el.setAttribute("readonly", "");
+          el.style.position = "absolute"; el.style.left = "-9999px";
+          document.body.appendChild(el); el.select();
+          const success = document.execCommand("copy");
+          document.body.removeChild(el);
+          return success ? { ok: true, mode: "execCommand" } : { ok: false, mode: "manual" };
+        } catch (_) { return { ok: false, mode: "manual" }; }
+      }
+
+      function AngleConverterApp() {
+        const [decimal, setDecimal] = useState(50.5);
+        const [secPrecision, setSecPrecision] = useState(2);
+        const dms = useMemo(() => decimalToDMS(decimal, secPrecision), [decimal, secPrecision]);
+
+        const [deg, setDeg] = useState(50);
+        const [min, setMin] = useState(30);
+        const [sec, setSec] = useState(0);
+        const decimalOut = useMemo(() => dmsToDecimal(deg, min, sec), [deg, min, sec]);
+
+        const [copyMsg, setCopyMsg] = useState("");
+        const manualBoxRef = useRef(null); const [manualText, setManualText] = useState("");
+        useEffect(() => { if (manualText && manualBoxRef.current) { manualBoxRef.current.focus(); manualBoxRef.current.select(); } }, [manualText]);
+
+        const handleCopy = async (text) => {
+          const { ok, mode } = await safeCopy(text);
+          if (ok) { setCopyMsg(mode === "clipboard" ? "コピーしました" : "コピーしました（代替手段）"); setManualText(""); setTimeout(() => setCopyMsg(""), 1200); }
+          else { setCopyMsg("この環境では自動コピーが制限されています。下のボックスを選択して Ctrl+C でコピーしてください。"); setManualText(String(text)); }
+        };
+
+        const dmsCombined = `${dms.sign < 0 ? "-" : ""}${dms.d}° ${pad2(dms.m)}′ ${formatSeconds(dms.s, secPrecision)}″`;
+
+        return (
+          <div className="min-h-screen w-full bg-gray-50 text-gray-900">
+            <div className="max-w-5xl mx-auto px-4 py-10">
+              <header className="mb-8">
+                <h1 className="text-3xl font-bold tracking-tight">角度変換（10進法 ⇄ 60進法）</h1>
+                <p className="text-sm text-gray-600 mt-2">小数角（度）と度分秒（° ′ ″）を相互に変換。負の角度にも対応。</p>
+              </header>
+
+              <main className="grid md:grid-cols-2 gap-6">
+                <section className="bg-white rounded-2xl shadow p-5">
+                  <h2 className="text-xl font-semibold mb-4">10進法（度）→ 60進法（度分秒）</h2>
+
+                  <label className="block text-sm font-medium mb-1" htmlFor="dec">角度（度）</label>
+                  <input id="dec" type="number" step="any" value={decimal} onChange={(e) => setDecimal(e.target.value)}
+                         className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                         placeholder="例）50.5" />
+
+                  <div className="mt-4 grid grid-cols-3 gap-3 items-end">
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">度（°）</label>
+                      <input readOnly value={dms.d === "" ? "" : dms.sign < 0 ? `-${dms.d}` : dms.d}
+                             className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3 py-2" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">分（′）</label>
+                      <input readOnly value={dms.m} className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3 py-2" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-600 mb-1">秒（″）</label>
+                      <input readOnly value={formatSeconds(dms.s, secPrecision)} className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3 py-2" />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex gap-3 items-center">
+                    <label className="text-sm">秒の小数桁：</label>
+                    <select className="rounded-xl border border-gray-300 px-2 py-1" value={secPrecision} onChange={(e) => setSecPrecision(Number(e.target.value))}>
+                      {[0,1,2,3].map(n => <option key={n} value={n}>{n}</option>)}
+                    </select>
+                    <button type="button" className="ml-auto rounded-xl px-3 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => handleCopy(dmsCombined)}>結果をコピー</button>
+                  </div>
+                </section>
+
+                <section className="bg-white rounded-2xl shadow p-5">
+                  <h2 className="text-xl font-semibold mb-4">60進法（度分秒）→ 10進法（度）</h2>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1" htmlFor="deg">度（°）</label>
+                      <input id="deg" type="number" step="1" value={deg} onChange={(e) => setDeg(e.target.value)}
+                             className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例）50 または -50" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1" htmlFor="min">分（′）</label>
+                      <input id="min" type="number" step="1" min={0} max={59} value={min}
+                             onChange={(e) => setMin(clamp(Number(e.target.value), 0, 59))}
+                             className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="0〜59" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1" htmlFor="sec">秒（″）</label>
+                      <input id="sec" type="number" step="any" min={0} max={59.999999} value={sec}
+                             onChange={(e) => setSec(clamp(Number(e.target.value), 0, 59.999999))}
+                             className="w-full rounded-xl border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="0〜<60" />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-xs text-gray-600 mb-1">10進法（度）</label>
+                    <input readOnly value={decimalOut} className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3 py-2" />
+                  </div>
+
+                  <div className="mt-4 flex gap-3">
+                    <button type="button" className="rounded-xl px-3 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => handleCopy(decimalOut)}>結果をコピー</button>
+                    <button type="button" className="ml-auto rounded-xl px-3 py-2 text-sm border border-gray-300 hover:bg-gray-50" onClick={() => { setDeg(0); setMin(0); setSec(0); }}>クリア</button>
+                  </div>
+
+                  <p className="text-xs text-gray-500 mt-4 leading-relaxed">※ 度の符号（±）は「度」にのみ付けてください（分・秒は常に0以上）。分・秒が60以上の場合は無効です。10進法に変換した結果は小数第10位まで表示します。</p>
+                </section>
+              </main>
+
+              {(copyMsg || manualText) && (
+                <div className="mt-6 p-4 rounded-xl bg-yellow-50 border border-yellow-200">
+                  <p className="text-sm text-yellow-900" aria-live="polite">{copyMsg}</p>
+                  {manualText && (
+                    <textarea ref={manualBoxRef} className="mt-3 w-full rounded-lg border border-yellow-300 bg-white px-3 py-2 text-sm" value={manualText} onChange={() => {}} readOnly />
+                  )}
+                </div>
+              )}
+
+              <SelfTests />
+
+              <footer className="mt-10 text-xs text-gray-500">
+                <p>Tip: 例）<span className="font-mono">50.5° → 50° 30′ 00″</span> ／ <span className="font-mono">50° 30′ 00″ → 50.5°</span></p>
+              </footer>
+            </div>
+          </div>
+        );
+      }
+
+      // --- In-app self tests -------------------------------------------------
+      function approxEqual(a, b, eps = 1e-9) { if (Number.isNaN(a) && Number.isNaN(b)) return true; return Math.abs(a - b) <= eps; }
+      function TestRow({ name, pass, expected, actual }) {
+        return (
+          <tr className={`border-b ${pass ? "bg-green-50" : "bg-red-50"}`}>
+            <td className="px-3 py-2 text-xs font-medium whitespace-nowrap">{name}</td>
+            <td className="px-3 py-2 text-xs">{String(pass)}</td>
+            <td className="px-3 py-2 text-xs font-mono">{String(expected)}</td>
+            <td className="px-3 py-2 text-xs font-mono">{String(actual)}</td>
+          </tr>
+        );
+      }
+      function SelfTests() {
+        const [results, setResults] = React.useState([]);
+        React.useEffect(() => {
+          const r = [];
+          const t1 = decimalToDMS(50.5, 0);
+          r.push({ name: "dec→dms: 50.5", pass: t1.sign === 1 && t1.d === 50 && t1.m === 30 && approxEqual(t1.s, 0), expected: "50° 30′ 00″", actual: `${t1.sign < 0 ? "-" : ""}${t1.d}° ${String(t1.m).padStart(2,"0")}′ ${Number(t1.s).toFixed(0)}″` });
+          const t2 = decimalToDMS(-50.5, 0);
+          r.push({ name: "dec→dms: -50.5", pass: t2.sign === -1 && t2.d === 50 && t2.m === 30 && approxEqual(t2.s, 0), expected: "-50° 30′ 00″", actual: `${t2.sign < 0 ? "-" : ""}${t2.d}° ${String(t2.m).padStart(2,"0")}′ ${Number(t2.s).toFixed(0)}″` });
+          const t3 = decimalToDMS(12.999999, 2);
+          r.push({ name: "dec→dms: 12.999999 (round)", pass: t3.sign === 1 && t3.d === 13 && t3.m === 0 && approxEqual(t3.s, 0), expected: "13° 00′ 00″", actual: `${t3.sign < 0 ? "-" : ""}${t3.d}° ${String(t3.m).padStart(2,"0")}′ ${Number(t3.s).toFixed(2)}″` });
+          const d1 = dmsToDecimal(50, 30, 0); r.push({ name: "dms→dec: 50°30′00″", pass: approxEqual(d1, 50.5), expected: 50.5, actual: d1 });
+          const d2 = dmsToDecimal(-50, 30, 0); r.push({ name: "dms→dec: -50°30′00″", pass: approxEqual(d2, -50.5), expected: -50.5, actual: d2 });
+          const d3 = dmsToDecimal(0, 59, 60); r.push({ name: "dms→dec: 0°59′60″ (invalid)", pass: Number.isNaN(d3), expected: NaN, actual: d3 });
+          const d4 = dmsToDecimal("", "", ""); r.push({ name: "dms→dec: empty", pass: d4 === "", expected: "", actual: d4 });
+          setResults(r);
+        }, []);
+        return (
+          <section className="mt-10 bg-white rounded-2xl shadow">
+            <div className="p-5">
+              <h3 className="text-lg font-semibold">内蔵テスト</h3>
+              <p className="text-xs text-gray-600 mt-1">主要な境界条件（丸め上がり、負の角度、無効値など）を自動チェックします。</p>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left">
+                <thead>
+                  <tr className="border-b bg-gray-50">
+                    <th className="px-3 py-2 text-xs font-semibold">テスト名</th>
+                    <th className="px-3 py-2 text-xs font-semibold">OK?</th>
+                    <th className="px-3 py-2 text-xs font-semibold">期待値</th>
+                    <th className="px-3 py-2 text-xs font-semibold">実測値</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {results.map((t, i) => <TestRow key={i} {...t} />)}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<AngleConverterApp />);
+    </script>
+  </body>
+</html>
