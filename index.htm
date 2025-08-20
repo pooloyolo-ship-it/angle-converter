@@ -4,7 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>角度変換（10進法 ⇄ 60進法）</title>
+    <!-- PWA: theme color & manifest -->
     <meta name="theme-color" content="#4f46e5">
+    <link rel="manifest" href="manifest.webmanifest">
+    <!-- iOS (ホーム画面追加時の外観) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⦿</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -260,6 +267,18 @@
 
       const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(<AngleConverterApp />);
+    </script>
+
+    <!-- PWA: service worker registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          const swUrl = new URL('./service-worker.js', location.href);
+          navigator.serviceWorker.register(swUrl, { scope: './' })
+            .then(reg => console.log('ServiceWorker registered:', reg.scope))
+            .catch(err => console.log('ServiceWorker registration failed:', err));
+        });
+      }
     </script>
   </body>
 </html>
