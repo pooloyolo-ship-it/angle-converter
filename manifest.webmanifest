@@ -1,0 +1,9 @@
+{
+  "name": "角度変換（10進法⇄60進法）",
+  "short_name": "角度変換",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f9fafb",
+  "theme_color": "#4f46e5"
+}
