@@ -29,7 +29,7 @@
     <script type="text/babel">
       const { useMemo, useRef, useState, useEffect } = React;
 
-      function clamp(n, min, max) { return Math.min(Math.max(n ?? 0, min), max); }
+      function clamp(n, min, max) { return Math.min(Math.max(Number.isFinite(n) ? n : 0, min), max); }
       function roundTo(n, digits = 6) { const p = Math.pow(10, digits); return Math.round(n * p) / p; }
 
       function decimalToDMS(value, secPrecision = 2) {
@@ -92,11 +92,123 @@
         } catch (_) { return { ok: false, mode: "manual" }; }
       }
 
+      // --- New: Angle addition/subtraction component -------------------------
+      function AngleMath() {
+        const [mode, setMode] = useState("dms"); // 'dms' | 'dec'
+        const [op, setOp] = useState("+");
+        const [secPrecision, setSecPrecision] = useState(2);
+
+        // DMS inputs (A, B)
+        const [aD, setAD] = useState(10), [aM, setAM] = useState(30), [aS, setAS] = useState(0);
+        const [bD, setBD] = useState(20), [bM, setBM] = useState(45), [bS, setBS] = useState(30);
+
+        // Decimal inputs (A, B)
+        const [aDec, setADec] = useState(10.5);
+        const [bDec, setBDec] = useState(20.7583333333);
+
+        function dmsToDecimalZeroOK(d, m, s) {
+          const v = dmsToDecimal(d, m, s);
+          if (v === "") return 0; // treat empty as 0
+          return v;
+        }
+
+        const decA = mode === "dms" ? dmsToDecimalZeroOK(aD, aM, aS) : Number(aDec || 0);
+        const decB = mode === "dms" ? dmsToDecimalZeroOK(bD, bM, bS) : Number(bDec || 0);
+        const decResult = useMemo(() => {
+          const A = decA, B = decB;
+          if ([A, B].some((x) => Number.isNaN(x))) return NaN;
+          return op === "+" ? A + B : A - B;
+        }, [decA, decB, op]);
+
+        const dmsResult = useMemo(() => decimalToDMS(decResult, secPrecision), [decResult, secPrecision]);
+
+        const dmsDisplay = `${dmsResult.sign < 0 ? "-" : ""}${dmsResult.d}° ${pad2(dmsResult.m)}′ ${formatSeconds(dmsResult.s, secPrecision)}″`;
+
+        return (
+          <section className="bg-white rounded-2xl shadow p-5">
+            <h2 className="text-xl font-semibold mb-4">角度の加算・減算</h2>
+
+            {/* Mode toggle */}
+            <div className="mb-3 flex gap-2 items-center">
+              <span className="text-sm">入力モード：</span>
+              <button type="button" className={`px-3 py-1 rounded-full text-sm border ${mode === 'dms' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`} onClick={() => setMode('dms')}>度分秒</button>
+              <button type="button" className={`px-3 py-1 rounded-full text-sm border ${mode === 'dec' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300'}`} onClick={() => setMode('dec')}>10進法（度）</button>
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-sm">秒の小数桁</span>
+                <select className="rounded-xl border border-gray-300 px-2 py-1" value={secPrecision} onChange={(e)=>setSecPrecision(Number(e.target.value))}>
+                  {[0,1,2,3].map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Operator toggle */}
+            <div className="mb-4 inline-flex rounded-xl border border-gray-300 overflow-hidden">
+              {['+','-'].map(sym => (
+                <button key={sym} type="button" onClick={()=>setOp(sym)} className={`px-4 py-2 text-sm ${op===sym ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700'}`}>{sym === '+' ? 'A + B' : 'A - B'}</button>
+              ))}
+            </div>
+
+            {/* Inputs */}
+            {mode === 'dms' ? (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">A</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <input type="number" step="1" value={aD} onChange={(e)=>setAD(e.target.value)} className="rounded-xl border border-gray-300 px-3 py-2" placeholder="度(±)"/>
+                    <input type="number" step="1" min={0} max={59} value={aM} onChange={(e)=>setAM(clamp(Number(e.target.value),0,59))} className="rounded-xl border border-gray-300 px-3 py-2" placeholder="分"/>
+                    <input type="number" step="any" min={0} max={59.999999} value={aS} onChange={(e)=>setAS(clamp(Number(e.target.value),0,59.999999))} className="rounded-xl border border-gray-300 px-3 py-2" placeholder="秒"/>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium mb-2">B</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <input type="number" step="1" value={bD} onChange={(e)=>setBD(e.target.value)} className="rounded-xl border border-gray-300 px-3 py-2" placeholder="度(±)"/>
+                    <input type="number" step="1" min={0} max={59} value={bM} onChange={(e)=>setBM(clamp(Number(e.target.value),0,59))} className="rounded-xl border border-gray-300 px-3 py-2" placeholder="分"/>
+                    <input type="number" step="any" min={0} max={59.999999} value={bS} onChange={(e)=>setBS(clamp(Number(e.target.value),0,59.999999))} className="rounded-xl border border-gray-300 px-3 py-2" placeholder="秒"/>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <h3 className="text-sm font-medium mb-2">A（度）</h3>
+                  <input type="number" step="any" value={aDec} onChange={(e)=>setADec(e.target.value)} className="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="例）10.5"/>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium mb-2">B（度）</h3>
+                  <input type="number" step="any" value={bDec} onChange={(e)=>setBDec(e.target.value)} className="w-full rounded-xl border border-gray-300 px-3 py-2" placeholder="例）20.7583333"/>
+                </div>
+              </div>
+            )}
+
+            {/* Results */}
+            <div className="mt-5 grid md:grid-cols-2 gap-4 items-end">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">結果（10進法・度）</label>
+                <input readOnly value={Number.isNaN(decResult) ? 'NaN' : decResult} className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3 py-2" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">結果（度分秒）</label>
+                <input readOnly value={Number.isNaN(decResult) ? '' : dmsDisplay} className="w-full rounded-xl bg-gray-50 border border-gray-200 px-3 py-2" />
+              </div>
+            </div>
+            <div className="mt-3 flex gap-3">
+              <button type="button" className="rounded-xl px-3 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700" onClick={()=>safeCopy(decResult)}>結果（度）をコピー</button>
+              <button type="button" className="rounded-xl px-3 py-2 text-sm bg-indigo-600 text-white hover:bg-indigo-700" onClick={()=>safeCopy(dmsDisplay)}>結果（度分秒）をコピー</button>
+            </div>
+
+            <p className="text-xs text-gray-500 mt-4 leading-relaxed">※ DMS入力では符号は「度」のみに付け、分・秒は0以上。計算は一旦10進法に変換してから行い、結果を度分秒に戻しています。</p>
+          </section>
+        );
+      }
+
       function AngleConverterApp() {
+        // Left: Decimal → DMS
         const [decimal, setDecimal] = useState(50.5);
         const [secPrecision, setSecPrecision] = useState(2);
         const dms = useMemo(() => decimalToDMS(decimal, secPrecision), [decimal, secPrecision]);
 
+        // Right: DMS → Decimal
         const [deg, setDeg] = useState(50);
         const [min, setMin] = useState(30);
         const [sec, setSec] = useState(0);
@@ -193,6 +305,11 @@
                 </section>
               </main>
 
+              {/* New section (full width) */}
+              <div className="mt-6">
+                <AngleMath />
+              </div>
+
               {(copyMsg || manualText) && (
                 <div className="mt-6 p-4 rounded-xl bg-yellow-50 border border-yellow-200">
                   <p className="text-sm text-yellow-900" aria-live="polite">{copyMsg}</p>
@@ -238,13 +355,31 @@
           const d2 = dmsToDecimal(-50, 30, 0); r.push({ name: "dms→dec: -50°30′00″", pass: approxEqual(d2, -50.5), expected: -50.5, actual: d2 });
           const d3 = dmsToDecimal(0, 59, 60); r.push({ name: "dms→dec: 0°59′60″ (invalid)", pass: Number.isNaN(d3), expected: NaN, actual: d3 });
           const d4 = dmsToDecimal("", "", ""); r.push({ name: "dms→dec: empty", pass: d4 === "", expected: "", actual: d4 });
+
+          // New: addition/subtraction tests
+          const addA = dmsToDecimal(10,30,0) + dmsToDecimal(20,45,30);
+          const addADMS = decimalToDMS(addA, 0);
+          r.push({ name: "加算: 10°30′00″ + 20°45′30″", pass: addADMS.d===31 && addADMS.m===15 && approxEqual(addADMS.s,0), expected: "31° 15′ 00″", actual: `${addADMS.d}° ${String(addADMS.m).padStart(2,'0')}′ ${Number(addADMS.s).toFixed(0)}″` });
+
+          const subA = dmsToDecimal(10,0,30) - dmsToDecimal(0,0,40);
+          const subADMS = decimalToDMS(subA, 0);
+          r.push({ name: "減算: 10°00′30″ − 0°00′40″", pass: subADMS.d===9 && subADMS.m===59 && approxEqual(subADMS.s,50), expected: "9° 59′ 50″", actual: `${subADMS.d}° ${String(subADMS.m).padStart(2,'0')}′ ${Number(subADMS.s).toFixed(0)}″` });
+
+          const mix = dmsToDecimal(-30,20,0) + dmsToDecimal(40,50,0);
+          const mixD = decimalToDMS(mix, 0);
+          r.push({ name: "加算: -30°20′00″ + 40°50′00″", pass: mixD.d===10 && mixD.m===30 && approxEqual(mixD.s,0), expected: "10° 30′ 00″", actual: `${mixD.d}° ${String(mixD.m).padStart(2,'0')}′ ${Number(mixD.s).toFixed(0)}″` });
+
+          const addDec = 12.25 + 0.5; // 12.75
+          const addDecDMS = decimalToDMS(addDec, 0);
+          r.push({ name: "加算(度): 12.25 + 0.5", pass: addDecDMS.d===12 && addDecDMS.m===45 && approxEqual(addDecDMS.s,0), expected: "12° 45′ 00″", actual: `${addDecDMS.d}° ${String(addDecDMS.m).padStart(2,'0')}′ ${Number(addDecDMS.s).toFixed(0)}″` });
+
           setResults(r);
         }, []);
         return (
           <section className="mt-10 bg-white rounded-2xl shadow">
             <div className="p-5">
               <h3 className="text-lg font-semibold">内蔵テスト</h3>
-              <p className="text-xs text-gray-600 mt-1">主要な境界条件（丸め上がり、負の角度、無効値など）を自動チェックします。</p>
+              <p className="text-xs text-gray-600 mt-1">主要な境界条件（丸め上がり、負の角度、無効値）と、加算・減算の代表ケースを自動チェックします。</p>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-left">
