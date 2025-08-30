@@ -1,0 +1,5 @@
+{"name":"後方交会法アプリ","short_name":"後方交会法",
+"start_url":"./?source=pwa","scope":"./","display":"standalone",
+"background_color":"#ffffff","theme_color":"#0f172a",
+"icons":[{"src":"icons/icon-192.png","sizes":"192x192","type":"image/png"},
+{"src":"icons/icon-512.png","sizes":"512x512","type":"image/png"}]}
