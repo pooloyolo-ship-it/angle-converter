@@ -1,9 +1,9 @@
 {
-  "name": "後方交会・自由設置 計算アプリ (最終構成)",
-  "short_name": "Resection JP final",
+  "name": "後方交会法・２点３点計算アプリ（ホワイト）",
+  "short_name": "2点3点計算",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0b0f19",
+  "background_color": "#ffffff",
   "theme_color": "#0b6cff",
   "lang": "ja",
   "icons": []

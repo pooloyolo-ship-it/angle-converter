@@ -4,64 +4,61 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>後方交会・3点・2点 計算アプリ</title>
+  <title>後方交会法・２点３点計算アプリ</title>
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#0b6cff">
   <style>
-    :root { --bg:#0b0f19; --card:#121826; --ink:#e6edf3; --muted:#93a1b2; --brand:#0b6cff; --line:#2b3b52; }
-    html,body { margin:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Yu Gothic", "Meiryo", sans-serif; background:var(--bg); color:var(--ink); }
-    header { position:sticky; top:0; z-index:10; background: linear-gradient(180deg, #0b0f19 0%, rgba(11,15,25,0.7) 100%); border-bottom:1px solid #1f2937; }
+    :root { --bg:#ffffff; --card:#ffffff; --ink:#222222; --muted:#555555; --brand:#0b6cff; --line:#cccccc; }
+    html,body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans JP","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic","Meiryo",sans-serif; background:var(--bg); color:var(--ink); }
+    header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--line); }
     header .wrap { display:flex; align-items:center; gap:.6rem; padding:.9rem 1rem; }
-    h1 { font-size:1.05rem; margin:0; }
+    h1 { font-size:1.3rem; margin:0; font-weight:800; }
     main { padding: 1rem; display:grid; gap:1rem; max-width: 1060px; margin: 0 auto; }
-    .card { background: var(--card); border:1px solid #1f2937; border-radius: 12px; padding: 1rem; }
+    .card { background: var(--card); border:1px solid var(--line); border-radius: 10px; padding: 1rem; }
     .row { display:grid; grid-template-columns: 1fr 1fr; gap:.6rem; }
     .row3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:.6rem; }
     label { font-size:.85rem; color:var(--muted); display:block; margin-bottom: .25rem; }
     input[type="number"], input[type="text"], select {
-      width:100%; box-sizing:border-box; padding:.65rem .7rem; border-radius:10px; border:1px solid var(--line); background:#0f172a; color:var(--ink);
-      font-size: 1rem; font-variant-numeric: tabular-nums; letter-spacing: .02em;
-      -moz-appearance: textfield;
+      width:100%; box-sizing:border-box; padding:.65rem .7rem; border-radius:8px; border:1px solid var(--line); background:#fff; color:var(--ink);
+      font-size: 1rem; font-variant-numeric: tabular-nums; letter-spacing: .02em; -moz-appearance: textfield;
     }
     input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-    input::placeholder { color:#64748b; }
-    .btn { appearance:none; border:none; background:var(--brand); color:white; padding:.7rem 1rem; border-radius:10px; font-weight:700; cursor:pointer; }
-    .btn.secondary { background:#253247; }
-    .btn.ghost { background:transparent; border:1px solid #334155; }
+    input::placeholder { color:#999; }
+    .btn { appearance:none; border:1px solid transparent; background:var(--brand); color:white; padding:.7rem 1rem; border-radius:8px; font-weight:700; cursor:pointer; }
+    .btn.secondary { background:#2f78ff1a; color:#0b6cff; border-color:#0b6cff; }
+    .btn.ghost { background:transparent; border:1px solid var(--line); color:#333; }
     .btnbar { display:flex; gap:.6rem; flex-wrap:wrap; }
     .muted { color:var(--muted); font-size:.9rem; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
     .grid { display:grid; gap:.7rem; }
-    .hr { height:1px; background:#1f2937; margin:.8rem 0; }
+    .hr { height:1px; background:var(--line); margin:.8rem 0; }
     table { width:100%; border-collapse: collapse; font-size:.95rem; }
     th, td { padding:.45rem .5rem; border-bottom:1px solid var(--line); text-align:right; }
     th:first-child, td:first-child { text-align:left; }
-    .pill { display:inline-block; padding:.18rem .5rem; border-radius:999px; border:1px solid #334155; color:#cbd5e1; font-size:.75rem; }
+    .pill { display:inline-block; padding:.18rem .5rem; border-radius:999px; border:1px solid var(--line); color:#333; font-size:.75rem; background:#fafafa; }
     .two-col { display:grid; grid-template-columns: 1fr; gap:1rem; }
     @media(min-width:1060px){ .two-col { grid-template-columns: 1.25fr .95fr; } }
-    footer { color:#94a3b8; text-align:center; padding:1.2rem 1rem; font-size:.85rem; }
+    footer { color:#888; text-align:center; padding:1.2rem 1rem; font-size:.85rem; }
 
-    /* angle block under coordinates (3点用) */
-    .angleBlock { background:#0f172a; border:1px dashed #2b3b52; border-radius:10px; padding:.55rem; }
+    .angleBlock { background:#fafafa; border:1px dashed var(--line); border-radius:8px; padding:.6rem; }
     .angleRow { display:grid; grid-template-columns: 1fr 24px 1fr 24px 1fr 24px; gap:.3rem; align-items:center; }
-    .unit { color:#7aa2d6; text-align:center; }
-    .angleTitle { color:#cfe1ff; font-size:.85rem; margin-bottom:.25rem; }
+    .unit { color:#0b6cff; text-align:center; }
+    .angleTitle { color:#333; font-size:.85rem; margin-bottom:.25rem; }
 
-    /* bottom diagram (3点のみ表示) */
     .diagram { display:flex; justify-content:center; }
     .diagram svg { width: 220px; height: 160px; }
-    .diagram text { font-size:13px; fill:#cfe1ff; }
-    .diagram .arcLbl { fill:#ffd166; font-style: italic; }
-    .diagram .pt { fill:#60a5fa; }
-    .diagram .P { fill:#facc15; }
-    .diagram line { stroke:#9fb3c8; stroke-width:1.1; }
-    .diagram circle.big { stroke:#9fb3c8; fill:none; stroke-width:.8; }
+    .diagram text { font-size:13px; fill:#333; }
+    .diagram .arcLbl { fill:#0b6cff; font-style: italic; }
+    .diagram .pt { fill:#000; }
+    .diagram .P { fill:#f59e0b; }
+    .diagram line { stroke:#666; stroke-width:1.1; }
+    .diagram circle.big { stroke:#bbb; fill:none; stroke-width:.8; }
   </style>
 </head>
 <body>
   <header>
     <div class="wrap">
-      <h1>後方交会・自由設置 計算アプリ</h1>
+      <h1>後方交会法・２点３点計算アプリ</h1>
       <span class="pill">JP軸 / DMS / AutoRef</span>
     </div>
   </header>
@@ -107,24 +104,12 @@
       <h2 style="margin:0;">② 杭打ち（Stakeout）</h2>
       <p class="muted">器械点の座標が出たら、設置したい点Tまでの<strong>水平距離</strong>と<strong>角度</strong>（方位角/右回り角）を計算。</p>
       <div class="row">
-        <div>
-          <label>器械点 X（北）</label>
-          <input id="IX" type="number" step="0.0001">
-        </div>
-        <div>
-          <label>器械点 Y（東）</label>
-          <input id="IY" type="number" step="0.0001">
-        </div>
+        <div><label>器械点 X（北）</label><input id="IX" type="number" step="0.0001"></div>
+        <div><label>器械点 Y（東）</label><input id="IY" type="number" step="0.0001"></div>
       </div>
       <div class="row">
-        <div>
-          <label>ターゲットT X（北）</label>
-          <input id="TX" type="number" step="0.0001">
-        </div>
-        <div>
-          <label>ターゲットT Y（東）</label>
-          <input id="TY" type="number" step="0.0001">
-        </div>
+        <div><label>ターゲットT X（北）</label><input id="TX" type="number" step="0.0001"></div>
+        <div><label>ターゲットT Y（東）</label><input id="TY" type="number" step="0.0001"></div>
       </div>
       <div class="row">
         <div>
@@ -150,7 +135,7 @@
   </main>
 
   <footer>
-    <div>© <span id="year"></span> Resection PWA JP. v1.6</div>
+    <div>© <span id="year"></span> Resection PWA JP. White v1.0</div>
   </footer>
 
   <script>
@@ -178,50 +163,47 @@
       byId('diagramWrap').style.display = showDiag ? 'block' : 'none';
       byId('diagram').style.display = showDiag ? 'flex' : 'none';
 
-      
-if (mode === 'tienstra'){
-  el.innerHTML = `
-    <div class="row">
-      <div><label>A X（北）</label><input id="AX" type="number" step="0.0001" inputmode="decimal"></div>
-      <div><label>A Y（東）</label><input id="AY" type="number" step="0.0001" inputmode="decimal"></div>
-    </div>
-    <div class="angleBlock">
-      <div class="angleTitle">γ = ∠APB（度・分・秒）</div>
-      <div class="angleRow">
-        <input id="gammaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
-        <input id="gammaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
-        <input id="gammaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
-      </div>
-    </div>
+      if (mode === 'tienstra'){
+        el.innerHTML = `
+          <div class="row">
+            <div><label>A X（北）</label><input id="AX" type="number" step="0.0001" inputmode="decimal"></div>
+            <div><label>A Y（東）</label><input id="AY" type="number" step="0.0001" inputmode="decimal"></div>
+          </div>
+          <div class="angleBlock">
+            <div class="angleTitle">γ = ∠APB（度・分・秒）</div>
+            <div class="angleRow">
+              <input id="gammaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
+              <input id="gammaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
+              <input id="gammaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
+            </div>
+          </div>
 
-    <div class="row" style="margin-top:.4rem;">
-      <div><label>B X（北）</label><input id="BX" type="number" step="0.0001" inputmode="decimal"></div>
-      <div><label>B Y（東）</label><input id="BY" type="number" step="0.0001" inputmode="decimal"></div>
-    </div>
-    <div class="angleBlock">
-      <div class="angleTitle">α = ∠BPC（度・分・秒）</div>
-      <div class="angleRow">
-        <input id="alphaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
-        <input id="alphaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
-        <input id="alphaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
-      </div>
-    </div>
+          <div class="row" style="margin-top:.4rem;">
+            <div><label>B X（北）</label><input id="BX" type="number" step="0.0001" inputmode="decimal"></div>
+            <div><label>B Y（東）</label><input id="BY" type="number" step="0.0001" inputmode="decimal"></div>
+          </div>
+          <div class="angleBlock">
+            <div class="angleTitle">α = ∠BPC（度・分・秒）</div>
+            <div class="angleRow">
+              <input id="alphaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
+              <input id="alphaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
+              <input id="alphaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
+            </div>
+          </div>
 
-    <div class="row" style="margin-top:.4rem;">
-      <div><label>C X（北）</label><input id="CX" type="number" step="0.0001" inputmode="decimal"></div>
-      <div><label>C Y（東）</label><input id="CY" type="number" step="0.0001" inputmode="decimal"></div>
-    </div>
-    <div class="angleBlock">
-      <div class="angleTitle">β = ∠CPA（度・分・秒）</div>
-      <div class="angleRow">
-        <input id="betaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
-        <input id="betaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
-        <input id="betaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
-      </div>
-    </div>
-  `;
-} else {
-        // 2点: 横並び (AX|AY|PA), (BX|BY|PB), ∠APBは下
+          <div class="row" style="margin-top:.4rem;">
+            <div><label>C X（北）</label><input id="CX" type="number" step="0.0001" inputmode="decimal"></div>
+            <div><label>C Y（東）</label><input id="CY" type="number" step="0.0001" inputmode="decimal"></div>
+          </div>
+          <div class="angleBlock">
+            <div class="angleTitle">β = ∠CPA（度・分・秒）</div>
+            <div class="angleRow">
+              <input id="betaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
+              <input id="betaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
+              <input id="betaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
+            </div>
+          </div>`;
+      } else {
         el.innerHTML = `
           <div class="row3">
             <div><label>A X（北）</label><input id="AX" type="number" step="0.0001"></div>
@@ -244,11 +226,8 @@ if (mode === 'tienstra'){
           <div style="display:flex;justify-content:flex-end;">
             <button class="btn ghost" type="button" id="flipBtn">別解候補</button>
           </div>`;
-        const flip = byId('flipBtn');
-        flip?.addEventListener('click', ()=>{
-          window.__useAlt = !window.__useAlt;
-          byId('result').innerHTML = `<div class="muted">別解候補を選択中。もう一度「計算する」を押してください。</div>`;
-        });
+        const flip = document.getElementById('flipBtn');
+        // will be re-bound after DOMContentLoaded; see below
       }
     }
 
@@ -323,7 +302,7 @@ if (mode === 'tienstra'){
         }
         byId('result').innerHTML=out;
       }catch(e){
-        byId('result').innerHTML = `<p style="color:#ff5c5c;">エラー：${e}</p>`;
+        byId('result').innerHTML = `<p style="color:#d00;">エラー：${e}</p>`;
       }
     }
 
@@ -350,7 +329,7 @@ if (mode === 'tienstra'){
             ${angleRightInfo}
           </table>`;
       }catch(e){
-        byId('stakeout').innerHTML = `<p style="color:#ff5c5c;">エラー：${e}</p>`;
+        byId('stakeout').innerHTML = `<p style="color:#d00;">エラー：${e}</p>`;
       }
     }
 
@@ -367,7 +346,7 @@ if (mode === 'tienstra'){
     }
 
     document.addEventListener('change', (e)=>{
-      if (e.target.name === 'mode') renderInputs();
+      if (e.target.name === 'mode') { renderInputs(); setTimeout(bindFlip, 0); }
       if (e.target.id === 'refSel') onRefChanged();
     });
     document.addEventListener('DOMContentLoaded', ()=>{
@@ -377,7 +356,12 @@ if (mode === 'tienstra'){
       byId('resetBtn').addEventListener('click', ()=> location.reload());
       byId('stakeBtn').addEventListener('click', onStake);
       byId('refSel').addEventListener('change', onRefChanged);
+      bindFlip();
     });
+    function bindFlip(){
+      const flip = document.getElementById('flipBtn');
+      if(flip){ flip.addEventListener('click', ()=>{ window.__useAlt = !window.__useAlt; byId('result').innerHTML = `<div class="muted">別解候補を選択中。もう一度「計算する」を押してください。</div>`; }); }
+    }
 
     if('serviceWorker' in navigator){
       window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
