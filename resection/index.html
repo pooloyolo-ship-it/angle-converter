@@ -19,7 +19,7 @@
     .row3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:.6rem; }
     label { font-size:.85rem; color:var(--muted); display:block; margin-bottom: .25rem; }
     input[type="number"], input[type="text"], select {
-      width:100%; box-sizing:border-box; padding:.65rem .7rem; border-radius:8px; border:1px solid var(--line); background:#fff; color:var(--ink);
+      width:100%; box-sizing:border-box; padding:.65rem .7rem; border-radius:8px; border:1px solid var(--line); background:#fff; color:#000;
       font-size: 1rem; font-variant-numeric: tabular-nums; letter-spacing: .02em; -moz-appearance: textfield;
     }
     input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
@@ -29,7 +29,7 @@
     .btn.ghost { background:transparent; border:1px solid var(--line); color:#333; }
     .btnbar { display:flex; gap:.6rem; flex-wrap:wrap; }
     .muted { color:var(--muted); font-size:.9rem; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
     .grid { display:grid; gap:.7rem; }
     .hr { height:1px; background:var(--line); margin:.8rem 0; }
     table { width:100%; border-collapse: collapse; font-size:.95rem; }
@@ -46,13 +46,25 @@
     .angleTitle { color:#333; font-size:.85rem; margin-bottom:.25rem; }
 
     .diagram { display:flex; justify-content:center; }
-    .diagram svg { width: 220px; height: 160px; }
+    .diagram svg { width: 260px; height: 180px; }
     .diagram text { font-size:13px; fill:#333; }
     .diagram .arcLbl { fill:#0b6cff; font-style: italic; }
     .diagram .pt { fill:#000; }
     .diagram .P { fill:#f59e0b; }
     .diagram line { stroke:#666; stroke-width:1.1; }
     .diagram circle.big { stroke:#bbb; fill:none; stroke-width:.8; }
+    .diag-blue { stroke:#0b6cff; fill:none; stroke-width:2; }
+    .diag-red { stroke:#e11d48; fill:none; stroke-width:2; }
+    .diag-grey { stroke:#666; fill:none; stroke-width:1; stroke-dasharray:3 3; }
+    .diag-text-blue { fill:#0b6cff; font-weight:600; }
+    .diag-text-red { fill:#e11d48; font-weight:700; }
+    .diag-ptP { fill:#d946ef; stroke:#000; stroke-width:.5; }
+    .diag-pt { fill:#d11; stroke:#000; stroke-width:.5; }
+
+    .preview { font-size:.8rem; color:#444; margin-top:.2rem; }
+    .warn { color:#d00; font-weight:700; }
+    .hidden { display:none !important; }
+    .helperToggle{display:flex;align-items:center;gap:.5rem;margin-top:.3rem}
   </style>
 </head>
 <body>
@@ -60,6 +72,7 @@
     <div class="wrap">
       <h1>後方交会法・２点３点計算アプリ</h1>
       <span class="pill">JP軸 / DMS / AutoRef</span>
+      <span class="pill">v1.6.4</span>
     </div>
   </header>
   <main class="two-col">
@@ -67,305 +80,243 @@
       <div>
         <h2 style="margin:0 0 .5rem 0;">① モード選択</h2>
         <div class="row">
-          <label><input type="radio" name="mode" value="tienstra" checked> 3点（角のみ：Tienstra）</label>
-          <label><input type="radio" name="mode" value="twodist"> 2点（距離あり：円交点）</label>
+          <label><input type="radio" name="mode" value="tienstra"> 3点（角のみ：Tienstra）</label>
+          <label><input type="radio" name="mode" value="twodist" checked> 2点（距離あり：円交点）</label>
         </div>
-        <p class="muted">UIは <strong>X（北）/ Y（東）</strong>。角はDMS。A→B→Cの順に座標、角は γ=∠APB, α=∠BPC, β=∠CPA の順。</p>
+        <p class="muted" id="modeDesc"></p>
+        <label class="helperToggle"><input id="helperOn" type="checkbox" checked> 入力ヘルパー（数値プレビュー& X,Yの同時貼付）を表示</label>
       </div>
 
-      <div id="inputs"></div>
-
-      <div class="btnbar">
-        <button class="btn" id="calcBtn">計算する</button>
-        <button class="btn ghost" id="resetBtn">リセット</button>
+      <div id="inputs3" class="grid hidden">
+        <div class="row"><div><label>A X（北）</label><input id="AX3" type="number" step="0.0001"></div><div><label>A Y（東）</label><input id="AY3" type="number" step="0.0001"></div></div>
+        <div class="angleBlock"><div class="angleTitle">γ = ∠APB（度・分・秒）</div><div class="angleRow"><input id="gammaD" type="number" step="1" placeholder="度"><div class="unit">°</div><input id="gammaM" type="number" step="1" placeholder="分"><div class="unit">′</div><input id="gammaS" type="number" step="0.01" placeholder="秒"><div class="unit">″</div></div></div>
+        <div class="row" style="margin-top:.4rem;"><div><label>B X（北）</label><input id="BX3" type="number" step="0.0001"></div><div><label>B Y（東）</label><input id="BY3" type="number" step="0.0001"></div></div>
+        <div class="angleBlock"><div class="angleTitle">α = ∠BPC（度・分・秒）</div><div class="angleRow"><input id="alphaD" type="number" step="1" placeholder="度"><div class="unit">°</div><input id="alphaM" type="number" step="1" placeholder="分"><div class="unit">′</div><input id="alphaS" type="number" step="0.01" placeholder="秒"><div class="unit">″</div></div></div>
+        <div class="row" style="margin-top:.4rem;"><div><label>C X（北）</label><input id="CX3" type="number" step="0.0001"></div><div><label>C Y（東）</label><input id="CY3" type="number" step="0.0001"></div></div>
+        <div class="angleBlock"><div class="angleTitle">β = ∠CPA（度・分・秒）</div><div class="angleRow"><input id="betaD" type="number" step="1" placeholder="度"><div class="unit">°</div><input id="betaM" type="number" step="1" placeholder="分"><div class="unit">′</div><input id="betaS" type="number" step="0.01" placeholder="秒"><div class="unit">″</div></div></div>
       </div>
 
+      <div id="inputs2" class="grid">
+        <div class="row3"><div><label>A X（北）</label><input id="AX2" type="number" step="0.0001"></div><div><label>A Y（東）</label><input id="AY2" type="number" step="0.0001"></div><div><label>PA 距離 [m]</label><input id="PA" type="number" step="0.0001"></div></div>
+        <div class="row3"><div><label>B X（北）</label><input id="BX2" type="number" step="0.0001"></div><div><label>B Y（東）</label><input id="BY2" type="number" step="0.0001"></div><div><label>PB 距離 [m]</label><input id="PB" type="number" step="0.0001"></div></div>
+        <div class="angleBlock"><div class="angleTitle">∠APB（任意・解選択）</div><div class="angleRow"><input id="phiD" type="number" step="1" placeholder="度"><div class="unit">°</div><input id="phiM" type="number" step="1" placeholder="分"><div class="unit">′</div><input id="phiS" type="number" step="0.01" placeholder="秒"><div class="unit">″</div></div></div>
+        <div style="display:flex;justify-content:flex-end;"><button class="btn ghost" type="button" id="flipBtn">別解候補</button></div>
+      </div>
+
+      <div class="btnbar"><button class="btn" id="calcBtn">計算する</button><button class="btn ghost" id="resetBtn">リセット</button><button class="btn secondary" id="restoreBtn">前回入力を復元</button></div>
       <div id="result" class="grid"></div>
+      <div id="diagramWrap" class="hr"></div>
 
-      <div id="diagramWrap" class="hr" style="display:none"></div>
-      <div id="diagram" class="diagram" style="display:none" aria-label="略図（時計回りに A→B→C）">
-        <svg viewBox="0 0 260 200">
-          <circle cx="130" cy="95" r="60" class="big" />
-          <line x1="130" y1="95" x2="195" y2="40" />
-          <line x1="130" y1="95" x2="205" y2="170" />
-          <line x1="130" y1="95" x2="35" y2="95" />
-          <circle cx="195" cy="40" r="4" class="pt"/><text x="206" y="42">A</text>
-          <circle cx="205" cy="170" r="4" class="pt"/><text x="214" y="175">B</text>
-          <circle cx="35"  cy="95"  r="4" class="pt"/><text x="22"  y="100">C</text>
-          <circle cx="130" cy="95" r="4" class="P"/><text x="137" y="90">P</text>
-          <text x="188" y="95" class="arcLbl">γ</text>
-          <text x="130" y="150" class="arcLbl">α</text>
-          <text x="105" y="65"  class="arcLbl">β</text>
-        </svg>
-      </div>
+      <div id="diagram3" class="diagram hidden"><svg viewBox="0 0 260 200"><circle cx="130" cy="95" r="60" class="big" /><line x1="130" y1="95" x2="195" y2="40" /><line x1="130" y1="95" x2="205" y2="170" /><line x1="130" y1="95" x2="35" y2="95" /><circle cx="195" cy="40" r="4" class="pt"/><text x="206" y="42">A</text><circle cx="205" cy="170" r="4" class="pt"/><text x="214" y="175">B</text><circle cx="35"  cy="95"  r="4" class="pt"/><text x="22"  y="100">C</text><circle cx="130" cy="95" r="4" class="P"/><text x="137" y="90">P</text><text x="188" y="95" class="arcLbl">γ</text><text x="130" y="150" class="arcLbl">α</text><text x="105" y="65"  class="arcLbl">β</text></svg></div>
+      <div id="diagram2" class="diagram"><svg viewBox="0 0 300 200"><circle cx="50" cy="40" r="6" class="diag-pt"/><text x="38" y="32">A</text><circle cx="260" cy="110" r="6" class="diag-pt"/><text x="268" y="114">B</text><circle cx="110" cy="160" r="6" class="diag-ptP"/><text x="95" y="182">P</text><line x1="110" y1="160" x2="50" y2="40" class="diag-blue"/><line x1="110" y1="160" x2="260" y2="110" class="diag-blue"/><text x="88" y="100" class="diag-text-blue">PA</text><text x="200" y="135" class="diag-text-blue">PB</text><path d="M 127 156 A 25 25 0 0 1 150 145" class="diag-grey"/><text x="140" y="150">∠APB</text></svg></div>
     </section>
 
     <aside class="card grid">
       <h2 style="margin:0;">② 杭打ち（Stakeout）</h2>
       <p class="muted">器械点の座標が出たら、設置したい点Tまでの<strong>水平距離</strong>と<strong>角度</strong>（方位角/右回り角）を計算。</p>
-      <div class="row">
-        <div><label>器械点 X（北）</label><input id="IX" type="number" step="0.0001"></div>
-        <div><label>器械点 Y（東）</label><input id="IY" type="number" step="0.0001"></div>
-      </div>
-      <div class="row">
-        <div><label>ターゲットT X（北）</label><input id="TX" type="number" step="0.0001"></div>
-        <div><label>ターゲットT Y（東）</label><input id="TY" type="number" step="0.0001"></div>
-      </div>
-      <div class="row">
-        <div>
-          <label>基準視準（任意）</label>
-          <select id="refSel">
-            <option value="">基準なし（絶対方位角）</option>
-            <option value="A">A（自動入力）</option>
-            <option value="B">B（自動入力）</option>
-            <option value="C">C（自動入力）</option>
-          </select>
-          <div class="muted" style="margin-top:.3rem;">選ぶと右欄に自動入力（編集可）</div>
-        </div>
-        <div>
-          <label>基準点の座標 X,Y</label>
-          <input id="refXY" type="text" placeholder="例: 18678.919, 17565.820">
-        </div>
-      </div>
-      <div class="btnbar">
-        <button class="btn secondary" id="stakeBtn">杭打ち計算</button>
-      </div>
+      <div class="row"><div><label>器械点 X（北）</label><input id="IX" type="number" step="0.0001"></div><div><label>器械点 Y（東）</label><input id="IY" type="number" step="0.0001"></div></div>
+      <div class="row"><div><label>ターゲットT X（北）</label><input id="TX" type="number" step="0.0001"></div><div><label>ターゲットT Y（東）</label><input id="TY" type="number" step="0.0001"></div></div>
+      <div class="row"><div><label>基準視準（任意）</label><select id="refSel"><option value="">基準なし（絶対方位角）</option><option value="A">A（自動入力）</option><option value="B">B（自動入力）</option><option value="C">C（自動入力）</option></select><div class="muted" style="margin-top:.3rem;">選ぶと右欄に自動入力（編集可）</div></div><div><label>基準点の座標 X,Y</label><input id="refXY" type="text" placeholder="例: 18678.919, 17565.820"></div></div>
+      <div class="btnbar"><button class="btn secondary" id="stakeBtn">杭打ち計算</button></div>
       <div id="stakeout"></div>
+      <div class="muted" style="margin-top:.6rem;"><b>用語説明：</b><br>方位角：北（X軸正方向）を0°として、<u>時計回り</u>に0〜360°で表す角度。<br>右回り角：選んだ基準視準の方向から、<u>時計回り</u>にターゲットTまで回した角度。<br>基準視準：器械点Pから既知点A/B/Cのいずれかを見た方向（基準方向）。<br>水平距離：PとTの平面距離（斜距離ではなく、XY平面での距離）。</div>
+      <div class="diagram" id="stakeDiagram"><svg viewBox="0 0 300 200"><circle cx="60" cy="160" r="6" class="diag-ptP"/><text x="40" y="182">P器械点</text><circle cx="250" cy="90" r="6" class="diag-pt"/><text x="258" y="94">T</text><circle cx="40" cy="40" r="6" class="diag-pt"/><text x="12" y="32">基準視準</text><line x1="60" y1="160" x2="40" y2="40" class="diag-blue"/><line x1="60" y1="160" x2="250" y2="90" class="diag-red"/><text x="150" y="120" class="diag-text-red">水平距離</text><path d="M 76 156 A 28 28 0 0 1 95 146" class="diag-grey"/><text x="85" y="152">右回り角</text></svg></div>
     </aside>
   </main>
 
-  <footer>
-    <div>© <span id="year"></span> Resection PWA JP. White v1.0</div>
-  </footer>
+  <footer><div>© <span id="year"></span> Resection PWA JP. White v1.6.4</div></footer>
 
   <script>
-    const $ = s => document.querySelector(s);
     const byId = id => document.getElementById(id);
 
-    // DMS helpers
+    // helpers
+    const sanitizeNum = (s) => { if (typeof s !== 'string') s = String(s ?? ''); return s.replace(/[_,\s]/g, ''); };
+    const parseNumLoose = (s) => { s = sanitizeNum(String(s)); const v = parseFloat(s); return Number.isFinite(v) ? v : NaN; };
+    function valNum(id,name){ const v = parseNumLoose(byId(id).value); if(!Number.isFinite(v)) throw `${name} を入力してください`; return v; }
+    const fmtThousands = (v,dec=4) => { if (!Number.isFinite(v)) return ''; const [int, frac] = v.toFixed(dec).split('.'); return int.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (frac ? '.' + frac : ''); };
+
+    // === Pair Paste Helper (robust) ===
+    function attachSmartPair(xId,yId){
+      const on = byId('helperOn').checked;
+      const xEl = byId(xId), yEl = byId(yId);
+      if(!xEl || !yEl) return;
+
+      // remove existing previews
+      [xEl, yEl].forEach(el=>{
+        let n = el.nextElementSibling;
+        while(n && n.classList && n.classList.contains('preview')){ const t=n; n=n.nextElementSibling; t.remove(); }
+      });
+      if(!on) return;
+
+      const pvX = document.createElement('div'); pvX.className='preview mono';
+      const pvY = document.createElement('div'); pvY.className='preview mono';
+      xEl.insertAdjacentElement('afterend', pvX); yEl.insertAdjacentElement('afterend', pvY);
+
+      function update(el, pv){
+        const v = parseNumLoose(el.value);
+        pv.textContent = Number.isFinite(v)? fmtThousands(v): '';
+      }
+      function onInput(){ update(xEl,pvX); update(yEl,pvY); }
+      xEl.addEventListener('input', onInput); yEl.addEventListener('input', onInput);
+      onInput();
+
+      function onPaste(e){
+        try{
+          const t = (e.clipboardData || window.clipboardData).getData('text');
+          if(!t) return;
+          let norm = t.replace(/[，、]/g, ',').replace(/[\t\n\r]+/g, ' ').trim();
+          const parts = norm.split(/[ ,]+/).filter(s=>s.length>0);
+          if(parts.length >= 2){
+            const a = parseFloat(parts[0]);
+            const b = parseFloat(parts[1]);
+            if(Number.isFinite(a) && Number.isFinite(b)){
+              e.preventDefault();
+              xEl.value = parts[0];
+              yEl.value = parts[1];
+              onInput();
+              return;
+            }
+          }
+        }catch(_){}
+      }
+      xEl.addEventListener('paste', onPaste);
+    }
+
+    function attachAllSmartPairs(){
+      [['AX2','AY2'],['BX2','BY2'],['AX3','AY3'],['BX3','BY3'],['CX3','CY3'],['IX','IY'],['TX','TY']].forEach(([x,y])=>attachSmartPair(x,y));
+    }
+    byId('helperOn').addEventListener('change', attachAllSmartPairs);
+
+    // DMS helpers + bearings
     function dmsToDec(d,m,s){ const sign=Math.sign(d)||1; const ad=Math.abs(d); return sign*(ad+(m||0)/60+(s||0)/3600); }
     function decToDms(dec){ const norm360=d=>((d%360)+360)%360; let x=norm360(dec); const d=Math.floor(x); const mFloat=(x-d)*60; const m=Math.floor(mFloat); const s=(mFloat-m)*60; return {d,m,s}; }
     function fmtDMS(dec,frac=2){ const {d,m,s}=decToDms(dec); return `${d}° ${m}′ ${s.toFixed(frac)}″`; }
-
-    // math helpers
     const toRad=d=>d*Math.PI/180,toDeg=r=>r*180/Math.PI,norm360=d=>((d%360)+360)%360,diffCW=(f,t)=>norm360(t-f);
     const bearingEN=(E1,N1,E2,N2)=>{ const dE=E2-E1,dN=N2-N1; return norm360(toDeg(Math.atan2(dE,dN))); };
     function angleAt(Ea,Na,Eb,Nb,Ec,Nc){ let ang=diffCW(bearingEN(Ea,Na,Eb,Nb),bearingEN(Ea,Na,Ec,Nc)); if(ang>180) ang=360-ang; return ang; }
-
-    function valNum(id,name){ const v=parseFloat(byId(id).value); if(!Number.isFinite(v)) throw `${name} を入力してください`; return v; }
     function dmsInput(prefix,name){ const d=parseFloat(byId(prefix+'D').value||'0'); const m=parseFloat(byId(prefix+'M').value||'0'); const s=parseFloat(byId(prefix+'S').value||'0'); const dec=dmsToDec(d,m,s); if(!Number.isFinite(dec)) throw `${name} を入力してください`; return dec; }
 
-    // UI builder
-    function renderInputs(){
-      const mode = document.querySelector('input[name="mode"]:checked').value;
-      const el = byId('inputs');
-      const showDiag = (mode === 'tienstra');
-      byId('diagramWrap').style.display = showDiag ? 'block' : 'none';
-      byId('diagram').style.display = showDiag ? 'flex' : 'none';
-
-      if (mode === 'tienstra'){
-        el.innerHTML = `
-          <div class="row">
-            <div><label>A X（北）</label><input id="AX" type="number" step="0.0001" inputmode="decimal"></div>
-            <div><label>A Y（東）</label><input id="AY" type="number" step="0.0001" inputmode="decimal"></div>
-          </div>
-          <div class="angleBlock">
-            <div class="angleTitle">γ = ∠APB（度・分・秒）</div>
-            <div class="angleRow">
-              <input id="gammaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
-              <input id="gammaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
-              <input id="gammaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:.4rem;">
-            <div><label>B X（北）</label><input id="BX" type="number" step="0.0001" inputmode="decimal"></div>
-            <div><label>B Y（東）</label><input id="BY" type="number" step="0.0001" inputmode="decimal"></div>
-          </div>
-          <div class="angleBlock">
-            <div class="angleTitle">α = ∠BPC（度・分・秒）</div>
-            <div class="angleRow">
-              <input id="alphaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
-              <input id="alphaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
-              <input id="alphaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
-            </div>
-          </div>
-
-          <div class="row" style="margin-top:.4rem;">
-            <div><label>C X（北）</label><input id="CX" type="number" step="0.0001" inputmode="decimal"></div>
-            <div><label>C Y（東）</label><input id="CY" type="number" step="0.0001" inputmode="decimal"></div>
-          </div>
-          <div class="angleBlock">
-            <div class="angleTitle">β = ∠CPA（度・分・秒）</div>
-            <div class="angleRow">
-              <input id="betaD" type="number" step="1" inputmode="decimal" placeholder="度"><div class="unit">°</div>
-              <input id="betaM" type="number" step="1" inputmode="decimal" placeholder="分"><div class="unit">′</div>
-              <input id="betaS" type="number" step="0.01" inputmode="decimal" placeholder="秒"><div class="unit">″</div>
-            </div>
-          </div>`;
-      } else {
-        el.innerHTML = `
-          <div class="row3">
-            <div><label>A X（北）</label><input id="AX" type="number" step="0.0001"></div>
-            <div><label>A Y（東）</label><input id="AY" type="number" step="0.0001"></div>
-            <div><label>PA 距離 [m]</label><input id="PA" type="number" step="0.0001"></div>
-          </div>
-          <div class="row3">
-            <div><label>B X（北）</label><input id="BX" type="number" step="0.0001"></div>
-            <div><label>B Y（東）</label><input id="BY" type="number" step="0.0001"></div>
-            <div><label>PB 距離 [m]</label><input id="PB" type="number" step="0.0001"></div>
-          </div>
-          <div class="angleBlock">
-            <div class="angleTitle">∠APB（任意・解選択）</div>
-            <div class="angleRow">
-              <input id="phiD" type="number" step="1" placeholder="度"><div class="unit">°</div>
-              <input id="phiM" type="number" step="1" placeholder="分"><div class="unit">′</div>
-              <input id="phiS" type="number" step="0.01" placeholder="秒"><div class="unit">″</div>
-            </div>
-          </div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button class="btn ghost" type="button" id="flipBtn">別解候補</button>
-          </div>`;
-        const flip = document.getElementById('flipBtn');
-        // will be re-bound after DOMContentLoaded; see below
-      }
+    function setModeDesc(mode){
+      const desc3 = 'UIは <b>X（北）/ Y（東）</b>。角はDMS。A→B→Cの順に座標、角は <b>γ=∠APB, α=∠BPC, β=∠CPA</b> の順。';
+      const desc2 = 'UIは <b>X（北）/ Y（東）</b>。A・B の座標と距離 <b>PA・PB</b> を入力し、<b>円の交点（円交点）</b>から器械点を求めます。必要に応じて ∠APB を入力して解を判別。<b>別解候補</b>で交点が2つある場合に切替。<div class="muted" style="margin-top:.4rem;"><b>用語説明：</b><br>円交点：2点からの距離で描いた円の交点を求めること。<br>別解候補：円交点が2つある場合に、もう一方の解を選ぶための切り替えボタン。</div>';
+      byId('modeDesc').innerHTML = (mode==='tienstra') ? desc3 : desc2;
+    }
+    function toggleModeUI(mode){
+      const is3 = (mode==='tienstra');
+      byId('inputs3').classList.toggle('hidden', !is3);
+      byId('inputs2').classList.toggle('hidden', is3);
+      byId('diagram3').classList.toggle('hidden', !is3);
+      byId('diagram2').classList.toggle('hidden', is3);
+      const flip = byId('flipBtn'); if (flip) flip.parentElement.style.display = is3 ? 'none' : 'flex';
+      setModeDesc(mode);
+      attachAllSmartPairs();
     }
 
-    // core
+    // math
     function tienstra(AE,AN,BE,BN,CE,CN,alpha,beta,gamma){
       const A=angleAt(AE,AN,BE,BN,CE,CN), B=angleAt(BE,BN,CE,CN,AE,AN), C=angleAt(CE,CN,AE,AN,BE,BN);
       const K1=1/(1/Math.tan(toRad(A))-1/Math.tan(toRad(alpha)));
       const K2=1/(1/Math.tan(toRad(B))-1/Math.tan(toRad(beta)));
       const K3=1/(1/Math.tan(toRad(C))-1/Math.tan(toRad(gamma)));
-      const denom=K1+K2+K3;
-      if(!Number.isFinite(denom)||Math.abs(denom)<1e-12) throw "数値が不安定（危険円付近・角度の組合せ不良）のため計算できません。";
+      const denom=K1+K2+K3; if(!Number.isFinite(denom)||Math.abs(denom)<1e-12) throw "数値が不安定のため計算できません。";
       return {E:(K1*AE+K2*BE+K3*CE)/denom, N:(K1*AN+K2*BN+K3*CN)/denom, A,B,C};
     }
     function twoCircle(AE,AN,BE,BN,r1,r2){
       const dx=BE-AE, dy=BN-AN, d=Math.hypot(dx,dy);
-      if(d<1e-12) throw "AとBが同一点です。";
-      if(d>r1+r2+1e-12) throw "2円が離れていて交点がありません。";
-      if(d<Math.abs(r1-r2)-1e-12) throw "一方の円が他方を内包して交わりません。";
+      if(d<1e-12) throw {kind:'samePoint', msg:"AとBが同一点です。", d};
+      if(d>r1+r2+1e-12) throw {kind:'tooFar', msg:"2円が離れていて交点がありません。", d};
+      if(d<Math.abs(r1-r2)-1e-12) throw {kind:'tooClose', msg:"一方の円が他方を内包して交わりません。", d};
       const a=(r1*r1-r2*r2+d*d)/(2*d), h2=r1*r1-a*a, h=h2<0?0:Math.sqrt(h2);
       const x0=AE+a*dx/d, y0=AN+a*dy/d, rx=-dy*(h/d), ry=dx*(h/d);
-      return [{E:x0+rx,N:y0+ry},{E:x0-rx,N:y0-ry}];
+      return [{E:x0+rx,N:y0+ry},{E:x0-rx,N:y0-ry, d}];
     }
     function pickByAngle(Ps,AE,AN,BE,BN,phi){
       if(!Number.isFinite(phi)||Ps.length<2) return Ps[0];
       function incl(P){ let a1=bearingEN(P.E,P.N,AE,AN); let a2=bearingEN(P.E,P.N,BE,BN); let ang=diffCW(a1,a2); if(ang>180) ang=360-ang; return ang; }
-      const d0=Math.abs(incl(Ps[0])-phi), d1=Math.abs(incl(Ps[1])-phi);
-      return d0<=d1?Ps[0]:Ps[1];
+      const d0=Math.abs(incl(Ps[0])-phi), d1=Math.abs(incl(Ps[1])-phi); return d0<=d1?Ps[0]:Ps[1];
     }
 
-    // actions
     function onCalc(){
       const mode = document.querySelector('input[name="mode"]:checked').value;
       try{
         let out="";
         if(mode==='tienstra'){
-          const AX=valNum('AX','A X'), AY=valNum('AY','A Y');
-          const BX=valNum('BX','B X'), BY=valNum('BY','B Y');
-          const CX=valNum('CX','C X'), CY=valNum('CY','C Y');
+          const AX=valNum('AX3','A X'), AY=valNum('AY3','A Y'), BX=valNum('BX3','B X'), BY=valNum('BY3','B Y'), CX=valNum('CX3','C X'), CY=valNum('CY3','C Y');
           const gamma=dmsInput('gamma','γ'), alpha=dmsInput('alpha','α'), beta=dmsInput('beta','β');
-          const AE=AY, AN=AX, BE=BY, BN=BX, CE=CY, CN=CX;
-          const {E,N,A,B,C}=tienstra(AE,AN,BE,BN,CE,CN,alpha,beta,gamma);
-          const PX=N, PY=E;
-          byId('IX').value=PX.toFixed(4); byId('IY').value=PY.toFixed(4);
-          out += `<h3 style="margin:.2rem 0;">器械点（P）</h3>`;
-          out += `<table><tr><th>項目</th><th>値</th></tr>
-            <tr><td>X（北）</td><td class="mono">${PX.toFixed(4)}</td></tr>
-            <tr><td>Y（東）</td><td class="mono">${PY.toFixed(4)}</td></tr>
-          </table>`;
-          out += `<div class="hr"></div>`;
-          out += `<table><tr><td>△ABC 内角</td><td class="mono">A=${fmtDMS(A)}, B=${fmtDMS(B)}, C=${fmtDMS(C)}</td></tr>
-                  <tr><td>α+β+γ</td><td class="mono">${fmtDMS(alpha+beta+gamma)}</td></tr></table>`;
+          const {E,N,A,B,C}=tienstra(AY,AX,BY,BX,CY,CX,alpha,beta,gamma);
+          const PX=N, PY=E; byId('IX').value=PX.toFixed(4); byId('IY').value=PY.toFixed(4);
+          out += `<h3 style="margin:.2rem 0;">器械点（P）</h3><table><tr><th>項目</th><th>値</th></tr><tr><td>X（北）</td><td class="mono">${PX.toFixed(4)}</td></tr><tr><td>Y（東）</td><td class="mono">${PY.toFixed(4)}</td></tr></table><div class="hr"></div><table><tr><td>△ABC 内角</td><td class="mono">A=${fmtDMS(A)}, B=${fmtDMS(B)}, C=${fmtDMS(C)}</td></tr><tr><td>α+β+γ</td><td class="mono">${fmtDMS(alpha+beta+gamma)}</td></tr></table>`;
         } else {
-          const AX=valNum('AX','A X'), AY=valNum('AY','A Y');
-          const BX=valNum('BX','B X'), BY=valNum('BY','B Y');
-          const r1=valNum('PA','PA距離'), r2=valNum('PB','PB距離');
-          let phi=NaN; const hasPhi = byId('phiD').value || byId('phiM').value || byId('phiS').value;
-          if(hasPhi){ phi=dmsInput('phi','∠APB'); }
+          const AX=valNum('AX2','A X'), AY=valNum('AY2','A Y'), BX=valNum('BX2','B X'), BY=valNum('BY2','B Y'), r1=valNum('PA','PA距離'), r2=valNum('PB','PB距離');
+          let phi = NaN; if(byId('phiD').value||byId('phiM').value||byId('phiS').value){ phi=dmsInput('phi','∠APB'); }
           const AE=AY, AN=AX, BE=BY, BN=BX;
-          const cand=twoCircle(AE,AN,BE,BN,r1,r2);
-          let P = pickByAngle(cand,AE,AN,BE,BN,phi);
-          if(window.__useAlt && cand.length>1){ P = (P.E===cand[0].E && P.N===cand[0].N)? cand[1] : cand[0]; }
-          const PX=P.N, PY=P.E;
-          byId('IX').value=PX.toFixed(4); byId('IY').value=PY.toFixed(4);
-          let inc=(()=>{ let a1=bearingEN(P.E,P.N,AE,AN); let a2=bearingEN(P.E,P.N,BE,BN); let ang=diffCW(a1,a2); if(ang>180) ang=360-ang; return ang; })();
-          out += `<h3 style="margin:.2rem 0;">器械点（P）</h3>`;
-          out += `<table><tr><th>項目</th><th>値</th></tr>
-            <tr><td>X（北）</td><td class="mono">${PX.toFixed(4)}</td></tr>
-            <tr><td>Y（東）</td><td class="mono">${PY.toFixed(4)}</td></tr>
-            <tr><td>∠APB（算出）</td><td class="mono">${fmtDMS(inc)}</td></tr>
-          </table>`;
-          if(!Number.isNaN(phi)){ const diff=Math.abs(inc-phi); out += `<p class="muted">観測 ∠APB=${fmtDMS(phi)} と比較：差 ${fmtDMS(diff,2)}</p>`; }
+          try{
+            const cand=twoCircle(AE,AN,BE,BN,r1,r2);
+            let P = pickByAngle(cand,AE,AN,BE,BN,phi); if(window.__useAlt&&cand.length>1){ P=(P.E===cand[0].E&&P.N===cand[0].N)?cand[1]:cand[0]; }
+            const PX=P.N, PY=P.E; byId('IX').value=PX.toFixed(4); byId('IY').value=PY.toFixed(4);
+            let inc=(()=>{ let a1=bearingEN(P.E,P.N,AE,AN); let a2=bearingEN(P.E,P.N,BE,BN); let ang=diffCW(a1,a2); if(ang>180) ang=360-ang; return ang; })();
+            out += `<h3 style="margin:.2rem 0;">器械点（P）</h3><table><tr><th>項目</th><th>値</th></tr><tr><td>X（北）</td><td class="mono">${PX.toFixed(4)}</td></tr><tr><td>Y（東）</td><td class="mono">${PY.toFixed(4)}</td></tr><tr><td>∠APB（算出）</td><td class="mono">${fmtDMS(inc)}</td></tr></table>`;
+            if(Number.isFinite(phi)){ const diff=Math.abs(inc-phi); out += `<p class="muted">観測 ∠APB=${fmtDMS(phi)} と比較：差 ${fmtDMS(diff,2)}</p>`; }
+          }catch(err){
+            const d=Math.hypot(BY-AY,BX-AX), sum=r1+r2, diff=Math.abs(r1-r2);
+            let reason=''; if(err.kind==='tooFar') reason=`<span class="warn">AB が PA+PB より大きい（離れすぎ）</span>`;
+            else if(err.kind==='tooClose') reason=`<span class="warn">AB が |PA−PB| より小さい（届かない）</span>`;
+            else if(err.kind==='samePoint') reason=`<span class="warn">A と B が同一点</span>`;
+            const nearTol=0.02; const gapFar = d - sum; const gapClose = diff - d;
+            let tip=''; if(gapFar>0 && gapFar<=nearTol){ tip = `→ 参考: PA と PB を合計で <b>${fmtThousands(gapFar,3)} m</b> 縮める（各々 <b>${fmtThousands(gapFar/2,3)} m</b> ずつ）と交点が出ます。`; }
+            else if(gapClose>0 && gapClose<=nearTol){ tip = `→ 参考: PA と PB の差を <b>${fmtThousands(gapClose,3)} m</b> 小さくすると交点が出ます。`; }
+            out = `<p class="warn">エラー：${err.msg||'交点がありません。'}</p>
+              <div class="muted">
+                <div>チェック（三角不等式）：</div>
+                <ul>
+                  <li>AB = <b>${fmtThousands(d,3)} m</b></li>
+                  <li>PA + PB = <b>${fmtThousands(sum,3)} m</b></li>
+                  <li>|PA − PB| = <b>${fmtThousands(diff,3)} m</b></li>
+                </ul>
+                <div>判定：${reason}</div>
+                <div style="margin-top:.3rem">${tip}</div>
+                <div style="margin-top:.3rem">単位（m）の統一、X↔Y逆、系番号違い、桁や小数点の誤りがないか確認してください。</div>
+              </div>`;
+          }
         }
         byId('result').innerHTML=out;
-      }catch(e){
-        byId('result').innerHTML = `<p style="color:#d00;">エラー：${e}</p>`;
-      }
+      }catch(e){ byId('result').innerHTML = `<p class="warn">エラー：${e}</p>`; }
     }
 
     function onStake(){
       try{
-        const IX=valNum('IX','器械点X'), IY=valNum('IY','器械点Y');
-        const TX=valNum('TX','ターゲットX'), TY=valNum('TY','ターゲットY');
-        const IE=IY, IN=IX, TE=TY, TN=TX;
-        const D=Math.hypot(TE-IE, TN-IN), azIT=bearingEN(IE,IN,TE,TN);
-        let angleRightInfo="";
-        const ref=byId('refSel').value;
-        if(ref){
-          const txt=byId('refXY').value.trim();
-          const [rx,ry]=txt.split(/[ ,]+/).map(Number);
-          if(!Number.isFinite(rx)||!Number.isFinite(ry)) throw "基準点座標を 'X,Y' 形式で入力してください。";
-          const RE=ry, RN=rx, azIR=bearingEN(IE,IN,RE,RN), right=diffCW(azIR,azIT);
-          angleRightInfo = `<tr><td>右回り角（基準→T）</td><td class="mono">${fmtDMS(right)}</td></tr>
-                            <tr><td>基準方位角（器械→基準）</td><td class="mono">${fmtDMS(azIR)}</td></tr>`;
-        }
-        byId('stakeout').innerHTML = `<table>
-            <tr><th>項目</th><th>値</th></tr>
-            <tr><td>水平距離（P→T）</td><td class="mono">${D.toFixed(4)} m</td></tr>
-            <tr><td>方位角（P→T）</td><td class="mono">${fmtDMS(azIT)}</td></tr>
-            ${angleRightInfo}
-          </table>`;
-      }catch(e){
-        byId('stakeout').innerHTML = `<p style="color:#d00;">エラー：${e}</p>`;
-      }
+        const IX=valNum('IX','器械点X'), IY=valNum('IY','器械点Y'), TX=valNum('TX','ターゲットX'), TY=valNum('TY','ターゲットY');
+        const IE=IY, IN=IX, TE=TY, TN=TX; const D=Math.hypot(TE-IE, TN-IN), az=bearingEN(IE,IN,TE,TN);
+        let extra=''; const ref=byId('refSel').value;
+        if(ref){ const txt=byId('refXY').value.trim(); const [rx,ry]=txt.split(/[ ,]+/).map(Number); if(!Number.isFinite(rx)||!Number.isFinite(ry)) throw "基準点座標を 'X,Y' 形式で入力してください。"; const RE=ry,RN=rx,azIR=bearingEN(IE,IN,RE,RN),right=diffCW(azIR,az); extra = `<tr><td>右回り角（基準→T）</td><td class="mono">${fmtDMS(right)}</td></tr><tr><td>基準方位角（器械→基準）</td><td class="mono">${fmtDMS(azIR)}</td></tr>`; }
+        byId('stakeout').innerHTML = `<table><tr><th>項目</th><th>値</th></tr><tr><td>水平距離（P→T）</td><td class="mono">${fmtThousands(D)} m</td></tr><tr><td>方位角（P→T）</td><td class="mono">${fmtDMS(az)}</td></tr>${extra}</table>`;
+      }catch(e){ byId('stakeout').innerHTML = `<p class="warn">エラー：${e}</p>`; }
     }
 
     function onRefChanged(){
-      const sel=byId('refSel').value;
-      const ax=byId('AX')?.value, ay=byId('AY')?.value;
-      const bx=byId('BX')?.value, byy=byId('BY')?.value;
-      const cx=byId('CX')?.value, cy=byId('CY')?.value;
-      let x=null,y=null;
-      if(sel==='A'&&ax&&ay){ x=ax; y=ay; }
-      if(sel==='B'&&bx&&byy){ x=bx; y=byy; }
-      if(sel==='C'&&cx&&cy){ x=cx; y=cy; }
-      if(x!==null && y!==null){ byId('refXY').value = `${x}, ${y}`; }
+      const sel=byId('refSel').value; const mode=document.querySelector('input[name="mode"]:checked').value; let x=null,y=null;
+      if(sel==='A'){ x=(mode==='tienstra')?byId('AX3')?.value:byId('AX2')?.value; y=(mode==='tienstra')?byId('AY3')?.value:byId('AY2')?.value;}
+      else if(sel==='B'){ x=(mode==='tienstra')?byId('BX3')?.value:byId('BX2')?.value; y=(mode==='tienstra')?byId('BY3')?.value:byId('BY2')?.value;}
+      else if(sel==='C'){ x=byId('CX3')?.value; y=byId('CY3')?.value; }
+      if(x&&y){ byId('refXY').value=`${x}, ${y}`; }
     }
 
-    document.addEventListener('change', (e)=>{
-      if (e.target.name === 'mode') { renderInputs(); setTimeout(bindFlip, 0); }
-      if (e.target.id === 'refSel') onRefChanged();
-    });
-    document.addEventListener('DOMContentLoaded', ()=>{
-      renderInputs();
-      byId('year').textContent = new Date().getFullYear();
+    function init(){
+      document.querySelectorAll('input[name="mode"]').forEach(r=>r.addEventListener('change',()=>{ const m=document.querySelector('input[name="mode"]:checked').value; toggleModeUI(m); onRefChanged(); }));
+      toggleModeUI(document.querySelector('input[name="mode"]:checked').value);
       byId('calcBtn').addEventListener('click', onCalc);
-      byId('resetBtn').addEventListener('click', ()=> location.reload());
+      byId('resetBtn').addEventListener('click', ()=>{ localStorage.removeItem('resection_inputs'); location.reload(); });
+      byId('restoreBtn').addEventListener('click', ()=>{ try{ const txt=localStorage.getItem('resection_inputs'); if(!txt) return; const obj=JSON.parse(txt); Object.entries(obj).forEach(([k,v])=>{ const el=byId(k); if(el!=null) el.value=v; }); }catch{} attachAllSmartPairs(); });
       byId('stakeBtn').addEventListener('click', onStake);
       byId('refSel').addEventListener('change', onRefChanged);
-      bindFlip();
-    });
-    function bindFlip(){
-      const flip = document.getElementById('flipBtn');
-      if(flip){ flip.addEventListener('click', ()=>{ window.__useAlt = !window.__useAlt; byId('result').innerHTML = `<div class="muted">別解候補を選択中。もう一度「計算する」を押してください。</div>`; }); }
+      attachAllSmartPairs();
+      byId('year').textContent=new Date().getFullYear();
+      const flip=byId('flipBtn'); if(flip) flip.addEventListener('click',()=>{ window.__useAlt=!window.__useAlt; byId('result').innerHTML='<div class="muted">別解候補を選択中。もう一度「計算する」を押してください。</div>'; });
+      byId('calcBtn').focus();
     }
+    init();
 
-    if('serviceWorker' in navigator){
-      window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
-    }
+    if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js?ver=164f2').catch(()=>{}); }); }
   </script>
 </body>
 </html>

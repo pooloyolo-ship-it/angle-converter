@@ -1,10 +1,9 @@
 {
-  "name": "後方交会法・２点３点計算アプリ（ホワイト）",
+  "name": "後方交会法・２点３点計算アプリ（ホワイト v1.6.4 フル final2）",
   "short_name": "2点3点計算",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0b6cff",
-  "lang": "ja",
-  "icons": []
+  "lang": "ja"
 }
