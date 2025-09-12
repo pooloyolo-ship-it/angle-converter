@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>法面の長さ 計算（法長）</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffffff">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  :root { color-scheme: light only; }
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto; margin:0; background:#fff; color:#111}
+  .wrap{max-width:720px; margin:0 auto; padding:20px}
+  .card{background:#f7f8fa;border-radius:16px;padding:16px;margin:12px 0;border:1px solid #e5e7eb}
+  h1{font-size:20px;margin:8px 0 12px}
+  label{display:block;font-size:14px;margin:8px 0 4px;color:#374151}
+  input,select,button{width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#111;font-size:16px}
+  input:focus,select:focus,button:focus{outline:3px solid #93c5fd; outline-offset:1px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tab{flex:1;min-width:160px}
+  .result{font-size:18px;line-height:1.6}
+  .big{font-size:28px;font-weight:700}
+  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;margin:4px 6px 0 0;color:#3730a3}
+  .muted{opacity:.85}
+  .footer{font-size:12px;opacity:.8;text-align:center;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>法面の長さ（法長）計算</h1>
+
+  <div class="card">
+    <div class="tabs">
+      <select id="mode" class="tab" aria-label="入力モード">
+        <option value="V_ratio">高さV + 比(1:X)</option>
+        <option value="V_percent">高さV + ％勾配</option>
+        <option value="V_angle">高さV + 角度(°)</option>
+        <option value="H_V">水平H + 高さV</option>
+        <option value="H_percent">水平H + ％勾配</option>
+        <option value="H_angle">水平H + 角度(°)</option>
+      </select>
+      <select id="round" class="tab" aria-label="小数桁数">
+        <option value="2">小数2桁</option>
+        <option value="3">小数3桁</option>
+        <option value="1">小数1桁</option>
+        <option value="0">整数</option>
+      </select>
+    </div>
+
+    <div id="inputs" class="inputs" aria-live="polite"></div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" aria-live="polite">
+    <div class="result">
+      <div class="big">法長 L = <span id="L">—</span> m</div>
+      <div>水平 H = <span id="H">—</span> m　/　高低差 V = <span id="V">—</span> m</div>
+      <div>角度 θ = <span id="theta">—</span> °　/　％勾配 = <span id="percent">—</span> %　/　比 = <span id="ratio">—</span></div>
+      <div class="pill muted" id="note"></div>
+    </div>
+    <button id="copy">結果をコピー</button>
+  </div>
+
+  <div class="footer">定義：% = (V/H)×100、比 1:X = H/V、L = √(H²+V²)。</div>
+</div>
+<script src="app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  }
+</script>
+</body>
+</html>
