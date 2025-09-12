@@ -13,6 +13,7 @@
   .wrap{max-width:720px; margin:0 auto; padding:20px}
   .card{background:#f7f8fa;border-radius:16px;padding:16px;margin:12px 0;border:1px solid #e5e7eb}
   h1{font-size:20px;margin:8px 0 12px}
+  h2{font-size:16px;margin:0 0 8px}
   label{display:block;font-size:14px;margin:8px 0 4px;color:#374151}
   input,select,button{width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#111;font-size:16px}
   input:focus,select:focus,button:focus{outline:3px solid #93c5fd; outline-offset:1px}
@@ -53,15 +54,47 @@
 
   <div class="card" aria-live="polite">
     <div class="result">
-      <div class="big">法長 L = <span id="L">—</span> m</div>
-      <div>水平 H = <span id="H">—</span> m　/　高低差 V = <span id="V">—</span> m</div>
+      <div class="big">法長 <b>SL</b> = <span id="L">—</span> m</div>
+      <div>水平 <b>L</b> = <span id="H">—</span> m　/　高さ <b>H</b> = <span id="V">—</span> m</div>
       <div>角度 θ = <span id="theta">—</span> °　/　％勾配 = <span id="percent">—</span> %　/　比 = <span id="ratio">—</span></div>
       <div class="pill muted" id="note"></div>
     </div>
     <button id="copy">結果をコピー</button>
   </div>
 
-  <div class="footer">定義：% = (V/H)×100、比 1:X = H/V、L = √(H²+V²)。</div>
+  <div class="card">
+    <h2>略図（SL・L・H・θ）</h2>
+    <svg id="diagram" viewBox="0 0 420 260" role="img" aria-label="法面略図" style="width:100%;height:auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px">
+      <defs>
+        <marker id="arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#111" />
+        </marker>
+      </defs>
+      <!-- guides -->
+      <line id="baseLine" x1="40" y1="210" x2="390" y2="210" stroke="#9ca3af" stroke-dasharray="4 4"/>
+      <line id="vertRef" x1="40" y1="20" x2="40" y2="210" stroke="#9ca3af" stroke-dasharray="4 4"/>
+      <!-- slope (red) -->
+      <line id="hypLine" x1="40" y1="210" x2="260" y2="110" stroke="#ef4444" stroke-width="2"/>
+      <!-- horizontal L -->
+      <line id="Hline" x1="40" y1="215" x2="260" y2="215" stroke="#111" marker-end="url(#arrow)"/>
+      <!-- vertical H -->
+      <line id="Vline" x1="265" y1="210" x2="265" y2="110" stroke="#111" marker-end="url(#arrow)"/>
+      <!-- angle arc -->
+      <path id="thetaArc" d="M70,210 A30,30 0 0 1 90,190" fill="none" stroke="#2563eb" stroke-width="2"/>
+      <!-- labels -->
+      <text id="Hlabel" x="150" y="238" font-size="12">水平 L = — m</text>
+      <text id="Vlabel" x="275" y="160" font-size="12">高さ H = — m</text>
+      <text id="SLlabel" x="140" y="130" font-size="12">法長 SL = — m</text>
+      <text id="Tlabel" x="100" y="200" font-size="12" fill="#2563eb">角度 θ = — °</text>
+      <text id="Plabel" x="180" y="150" font-size="12" fill="#ef4444">勾配 % = —</text>
+      <text id="Rlabel" x="200" y="170" font-size="12">比 1:X = —</text>
+    </svg>
+    <div class="muted" style="font-size:12px;margin-top:6px">
+      ※略図はイメージ（縮尺は自動調整）。入力に合わせてSL・L・H・θ・％・1:Xを更新します。
+    </div>
+  </div>
+
+  <div class="footer">定義：% = (V/H)×100、比 1:X = H/V、SL = √(H²+V²)。</div>
 </div>
 <script src="app.js"></script>
 <script>

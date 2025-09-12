@@ -34,16 +34,46 @@ function calculate(){
 
   if(!(H>0) || !(V>=0)){ setResult(); return; }
 
-  const L = Math.sqrt(H*H + V*V);
+  const SL = Math.sqrt(H*H + V*V);
   const theta = Math.atan2(V,H)*180/Math.PI;
   const percent = H>0 ? (V/H)*100 : null;
   const ratio = V>0 ? `1:${(H/V).toFixed(3)}` : '—';
 
-  setResult(L,H,V,theta,percent,ratio);
+  setResult(SL,H,V,theta,percent,ratio);
 }
 
-function setResult(L,H,V,theta,percent,ratio){
-  el('L').textContent = fmt(L);
+function updateDiagram(H,V,SL,theta,percentText,ratioText){
+  const svg = document.getElementById('diagram');
+  if(!svg || !(H>0) || !(V>=0)) return;
+  const x0 = 40, y0 = 210, maxW = 340, maxH = 180;
+  const scale = Math.min(maxW / H, maxH / Math.max(V, 0.0001));
+  const w = H * scale;
+  const h = V * scale;
+  const x1 = x0 + w, y1 = y0 - h;
+  svg.querySelector('#hypLine').setAttribute('x2', x1);
+  svg.querySelector('#hypLine').setAttribute('y2', y1);
+  svg.querySelector('#Hline').setAttribute('x2', x0 + w);
+  svg.querySelector('#Vline').setAttribute('x1', x0 + w + 5);
+  svg.querySelector('#Vline').setAttribute('x2', x0 + w + 5);
+  svg.querySelector('#Vline').setAttribute('y2', y0 - h);
+  const r = 30;
+  const ang = Math.atan2(h, w);
+  const xA = x0 + r*Math.cos(0), yA = y0 - r*Math.sin(0);
+  const xB = x0 + r*Math.cos(ang), yB = y0 - r*Math.sin(ang);
+  const d = `M${xA},${yA} A${r},${r} 0 0 1 ${xB},${yB}`;
+  svg.querySelector('#thetaArc').setAttribute('d', d);
+  svg.querySelector('#Hlabel').textContent = `水平 L = ${fmt(H)} m`;
+  svg.querySelector('#Vlabel').textContent = `高さ H = ${fmt(V)} m`;
+  svg.querySelector('#SLlabel').textContent = `法長 SL = ${fmt(SL)} m`;
+  svg.querySelector('#Tlabel').textContent = `角度 θ = ${fmt(theta)} °`;
+  if (percentText!=null) svg.querySelector('#Plabel').textContent = `勾配 % = ${percentText}`;
+  if (ratioText!=null) svg.querySelector('#Rlabel').textContent = `比 1:X = ${ratioText.replace('1:','')}`;
+  svg.querySelector('#SLlabel').setAttribute('x', x0 + w*0.45);
+  svg.querySelector('#SLlabel').setAttribute('y', y0 - h*0.55);
+}
+
+function setResult(SL,H,V,theta,percent,ratio){
+  el('L').textContent = fmt(SL);
   el('H').textContent = fmt(H);
   el('V').textContent = fmt(V);
   el('theta').textContent = fmt(theta);
@@ -60,13 +90,14 @@ function setResult(L,H,V,theta,percent,ratio){
     }
   }
   el('note').textContent = note;
+  updateDiagram(H,V,SL,theta, el('percent').textContent, el('ratio').textContent);
 }
 
 el('mode').addEventListener('change', renderInputs);
 el('calc').addEventListener('click', calculate);
 el('round').addEventListener('change', calculate);
 el('copy').addEventListener('click', ()=>{
-  const t = `【法面計算】 L=${el('L').textContent}m, H=${el('H').textContent}m, V=${el('V').textContent}m / θ=${el('theta').textContent}°, 勾配=${el('percent').textContent}%, 比=${el('ratio').textContent}`;
+  const t = `【法面計算】 SL=${el('L').textContent}m, L=${el('H').textContent}m, H=${el('V').textContent}m / θ=${el('theta').textContent}°, 勾配=${el('percent').textContent}%, 比=${el('ratio').textContent}`;
   navigator.clipboard.writeText(t).catch(()=>{});
 });
 renderInputs();
