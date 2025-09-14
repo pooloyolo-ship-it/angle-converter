@@ -6,14 +6,22 @@
   <title>法面の長さ 計算（norinaga版）</title>
   <meta name="theme-color" content="#ffffff">
   <style>
+    :root { color-scheme: light only; }
+    * { box-sizing: border-box; }
     body{font-family:system-ui,-apple-system,"Segoe UI",Roboto;margin:0;background:#fff;color:#111}
-    .wrap{max-width:720px;margin:0 auto;padding:20px}
-    .card{background:#f7f8fa;border-radius:16px;padding:16px;margin:12px 0;border:1px solid #e5e7eb}
-    label{display:block;font-size:14px;margin:8px 0 4px;color:#374151}
-    input,select,button{width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#111;font-size:16px}
-    input:focus,select:focus,button:focus{outline:3px solid #93c5fd; outline-offset:1px}
-    .tabs{display:flex;gap:8px;flex-wrap:wrap}
-    .tab{flex:1;min-width:160px}
+    .wrap{max-width:720px;margin:0 auto;padding:16px}
+    .card{background:#f7f8fa;border-radius:14px;padding:14px;margin:12px 0;border:1px solid #e5e7eb}
+    h1{font-size:24px;margin:8px 0 12px}
+    label{display:block;font-size:13px;margin:8px 0 6px;color:#374151}
+    input,select,button{
+      width:100%;padding:12px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#111;font-size:16px
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1 1 220px}
+    button{cursor:pointer}
+    #out.empty{display:none;}
+    #out h2{margin:6px 0 8px;font-size:20px}
+    #out p{margin:4px 0}
   </style>
 </head>
 <body>
@@ -21,8 +29,8 @@
   <h1>法面の長さ（norinaga版）</h1>
 
   <div class="card">
-    <div class="tabs">
-      <select id="mode" class="tab" aria-label="入力モード">
+    <div class="row">
+      <select id="mode" aria-label="入力モード">
         <option value="H_V">水平L + 高さH</option>
         <option value="H_percent">水平L + ％勾配</option>
         <option value="H_angle">水平L + 角度(°)</option>
@@ -30,7 +38,7 @@
         <option value="V_percent">高さH + ％勾配</option>
         <option value="V_angle">高さH + 角度(°)</option>
       </select>
-      <select id="round" class="tab" aria-label="小数桁数">
+      <select id="round" aria-label="小数桁数">
         <option value="2">小数2桁</option>
         <option value="3">小数3桁</option>
         <option value="1">小数1桁</option>
@@ -41,7 +49,7 @@
     <button id="calc">計算する</button>
   </div>
 
-  <div id="out" class="card" aria-live="polite"></div>
+  <div id="out" class="card empty" aria-live="polite"></div>
 </div>
 
 <script src="./app.js"></script>

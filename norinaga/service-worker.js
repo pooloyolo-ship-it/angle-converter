@@ -1,7 +1,5 @@
-// norinaga/service-worker.js
-const CACHE = 'norinaga-v3';
+const CACHE = 'norinaga-v4';
 const ASSETS = ['./','./index.html','./app.js'];
-
 self.addEventListener('install', e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));
   self.skipWaiting();
