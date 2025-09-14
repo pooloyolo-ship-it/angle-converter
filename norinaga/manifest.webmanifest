@@ -1,5 +1,5 @@
 {
-  "name": "法面の長さ（norinaga版）",
+  "name": "法面の長さ（法長計算アプリ）",
   "short_name": "法長計算",
   "start_url": ".",
   "display": "standalone",
