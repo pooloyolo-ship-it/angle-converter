@@ -33,12 +33,12 @@
   <div class="card">
     <div class="tabs">
       <select id="mode" class="tab" aria-label="入力モード">
-        <option value="V_ratio">高さV + 比(1:X)</option>
-        <option value="V_percent">高さV + ％勾配</option>
-        <option value="V_angle">高さV + 角度(°)</option>
-        <option value="H_V">水平H + 高さV</option>
-        <option value="H_percent">水平H + ％勾配</option>
-        <option value="H_angle">水平H + 角度(°)</option>
+        <option value="V_ratio">高さH </H1> + 比(1:X)</option>
+        <option value="V_percent">高さH + ％勾配</option>
+        <option value="V_angle">高さH + 角度(°)</option>
+        <option value="H_V">水平L + 高さH</option>
+        <option value="H_percent">水平L + ％勾配</option>
+        <option value="H_angle">水平L + 角度(°)</option>
       </select>
       <select id="round" class="tab" aria-label="小数桁数">
         <option value="2">小数2桁</option>
@@ -94,7 +94,7 @@
     </div>
   </div>
 
-  <div class="footer">定義：% = (V/H)×100、比 1:X = H/V、SL = √(H²+V²)。</div>
+  <div class="footer">定義：% = (H/L)×100、比 1:X = L/H、SL = √(L²+H²)。</div>
 </div>
 <script src="app.js"></script>
 <script>
