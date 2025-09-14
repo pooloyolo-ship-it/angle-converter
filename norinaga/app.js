@@ -56,8 +56,9 @@ function calculate(){
 }
 
 function showOutput(data){
+  const copyBtn = document.getElementById('copyBtn');
   const out = el('out');
-  if(!data){ out.style.display = 'none'; out.innerHTML = ''; return; }
+  if(!data){ out.style.display = 'none'; out.innerHTML = ''; if (copyBtn) copyBtn.style.display = 'none'; if (copyBtn) copyBtn.onclick = null; return; }
   const {SL,H,V,theta,percent,ratioX} = data;
   out.style.display = 'block';
   out.innerHTML = `
@@ -65,6 +66,15 @@ function showOutput(data){
     <p>水平 L = ${fmt(H)} m ／ 高さ H = ${fmt(V)} m</p>
     <p>角度 θ = ${fmt(theta)} ° ／ %勾配 = ${fmt(percent)} % ／ 比 = 1:${fmt(ratioX)}</p>
   `;
+  if (copyBtn) {
+    copyBtn.style.display = 'inline-block';
+    copyBtn.onclick = ()=>{
+      const text = `法長 SL=${fmt(SL)}m, 水平 L=${fmt(H)}m, 高さ H=${fmt(V)}m, 角度 θ=${fmt(theta)}°, %勾配=${fmt(percent)}%, 比=1:${fmt(ratioX)}`;
+      navigator.clipboard.writeText(text)
+        .then(()=>alert('コピーしました！'))
+        .catch(()=>alert('コピーに失敗しました'));
+    };
+  }
 }
 
 function showDiagram(data){
