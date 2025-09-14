@@ -1,11 +1,11 @@
 const el = (id)=>document.getElementById(id);
 const modes = {
-  V_ratio: [ {id:"V", label:"高さ V (m)"}, {id:"X", label:"比 1:X（例 1.5）"} ],
-  V_percent: [ {id:"V", label:"高さ V (m)"}, {id:"P", label:"％勾配（例 12）"} ],
-  V_angle: [ {id:"V", label:"高さ V (m)"}, {id:"A", label:"角度 θ (°)"} ],
-  H_V: [ {id:"H", label:"水平 H (m)"}, {id:"V", label:"高さ V (m)"} ],
-  H_percent: [ {id:"H", label:"水平 H (m)"}, {id:"P", label:"％勾配（例 12）"} ],
-  H_angle: [ {id:"H", label:"水平 H (m)"}, {id:"A", label:"角度 θ (°)"} ],
+  V_ratio: [ {id:"V", label:"高さ H (m)"}, {id:"X", label:"比 1:X（例 1.5）"} ],
+  V_percent: [ {id:"V", label:"高さ H (m)"}, {id:"P", label:"％勾配（例 12）"} ],
+  V_angle: [ {id:"V", label:"高さ H (m)"}, {id:"A", label:"角度 θ (°)"} ],
+  H_V: [ {id:"H", label:"水平 L (m)"}, {id:"V", label:"高さ H (m)"} ],
+  H_percent: [ {id:"H", label:"水平 L (m)"}, {id:"P", label:"％勾配（例 12）"} ],
+  H_angle: [ {id:"H", label:"水平 L (m)"}, {id:"A", label:"角度 θ (°)"} ],
 };
 
 function renderInputs(){
