@@ -1,5 +1,5 @@
 
-const CACHE = "ts-leveling-v1";
+const CACHE = "ts-leveling-public-v1";
 const ASSETS = ["./", "./index.html", "./app.js", "./manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {

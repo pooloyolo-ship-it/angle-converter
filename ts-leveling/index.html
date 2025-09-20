@@ -4,10 +4,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>TS水準測量（器高式）計算 – MVP</title>
-<link rel="manifest" href="./manifest.webmanifest">
+<title>TS水準測量（器高式）計算 – 公開版</title>
+<link rel="manifest" href="./manifest.webmanifest" />
 <style>
-  :root{--bg:#ffffff;--card:#fafafa;--ink:#111827;--muted:#6b7280;--accent:#2563eb;--ok:#059669;--warn:#d97706;--border:#e5e7eb;--sticky-left:0px}
+  :root{--bg:#ffffff;--card:#fafafa;--ink:#111827;--muted:#6b7280;--accent:#2563eb;--border:#e5e7eb;--sticky-left:0px}
   *{box-sizing:border-box}
   body{margin:0;background:#ffffff;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Hiragino Kaku Gothic ProN","Meiryo",sans-serif}
   .wrap{max-width:1100px;margin:0 auto;padding:20px}
@@ -17,19 +17,18 @@
   .col{flex:1 1 240px}
   label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:6px}
   input[type="number"], input[type="text"], select{width:100%;background:#ffffff;border:1px solid var(--border);color:var(--ink);padding:10px 12px;border-radius:10px;outline:none}
-  input[type="checkbox"]{transform:scale(1.15);margin-right:8px}
   .btn{appearance:none;border:1px solid #c7d2fe;background:#e0e7ff;color:#111827;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:.9rem}
   .btn:hover{filter:brightness(1.05)}
   .btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}
   .btn.ghost{background:transparent;border-color:#c7d2fe}
   table{width:100%;border-collapse:separate;border-spacing:0 8px}
   th,td{text-align:left;padding:10px 10px}
-  thead th{font-size:.9rem;color:var(--muted);background:#ffffff;position:sticky;top:0;z-index:2}
+  thead th{font-size:.9rem;color:#6b7280;background:#ffffff;position:sticky;top:0;z-index:2}
   tbody tr{background:#ffffff;border:1px solid var(--border)}
   tbody tr td:first-child{border-top-left-radius:10px;border-bottom-left-radius:10px}
   tbody tr td:last-child{border-top-right-radius:10px;border-bottom-right-radius:10px}
   .tag{display:inline-block;background:#eef2ff;border:1px solid #c7d2fe;color:#2563eb;padding:4px 8px;border-radius:999px;font-size:.8rem}
-  .footer{font-size:.85rem;color:var(--muted)}
+  .footer{font-size:.85rem;color:#6b7280}
   .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
   .grid > *{grid-column:span 12}
   @media (min-width:900px){.grid .span6{grid-column:span 6}}
@@ -37,36 +36,27 @@
   @keyframes pulseBg{0%{background:#eef2ff}30%{background:#dbeafe}100%{background:#ffffff}}
   .table-wrap{overflow:auto}
   .sticky-name{position:sticky;left:var(--sticky-left);z-index:1;background:#ffffff}
-  .sep{height:8px}
-  .tests{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:.88rem;white-space:pre-wrap;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>TS水準測量（器高式）計算 – スマホWebアプリ</h1>
+  <h1>TS水準測量（器高式）計算 – 公開版</h1>
   <div class="card">
     <div class="row">
       <div class="col">
         <label>ベンチマーク標高（BM GH, m）</label>
         <input id="bmGH" type="number" step="0.001" value="100.000" />
       </div>
-      <div class="col">
-        <label>ターゲット高（一定の場合, m）<span class="tag">任意</span></label>
-        <input id="tgtH" type="number" step="0.001" placeholder="例: 1.500" />
-      </div>
     </div>
     <div class="row"><label><input id="autoInvert" type="checkbox" checked />TSの高低差の符号を自動で器高式用（＋↔−）に反転</label></div>
-    <div class="row"><label><input id="useTarget" type="checkbox" />ターゲット高補正を使う（各ΔHから h を減算→その後に符号反転）</label></div>
     <div class="row" style="gap:8px">
       <button class="btn primary" id="addRow">行を追加</button>
       <button class="btn ghost" id="example">例を入れる</button>
       <button class="btn ghost" id="clear">クリア</button>
-      <span class="sep"></span>
+      <span style="width:8px"></span>
       <button class="btn" id="calc">計算する</button>
       <button class="btn" id="exportCsv">CSV出力</button>
       <button class="btn" id="share">共有リンク</button>
-      <span class="sep"></span>
-      <button class="btn" id="runTests">テスト実行</button>
     </div>
   </div>
 
@@ -77,10 +67,10 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>種別</th>
-            <th>高低差 ΔH（TS表示, m）</th>
-            <th class="sticky-name">測点名/メモ</th>
-            <th>削除</th>
+            <th>Type</th>
+            <th>DeltaH TS (m)</th>
+            <th class="sticky-name">Point/Note</th>
+            <th>Del</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -100,7 +90,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>#</th><th>入力行</th><th class="sticky-name">測点名</th><th>計算GH (m)</th></tr>
+            <tr><th>#</th><th>Input Row</th><th class="sticky-name">Point</th><th>GH (m)</th></tr>
           </thead>
           <tbody id="outBody"></tbody>
         </table>
@@ -108,26 +98,20 @@
     </div>
 
     <div class="card span6">
-      <h3>メモ</h3>
+      <h3>メモ（公開条件）</h3>
       <p class="footer">
-        ・最初の行はB.S（BMに対する測定）。以降はF.S（求めたい測点）。<br>
-        ・途中でB.Sを挿入した場合（折返し／T.P）は、直前のF.Sで求めたGHを新BMとみなし、I.Hを再計算して続行します。<br>
-        ・「ターゲット高を一定」にすると理論上 h は相殺（TS間接水準）。<br>
-        ・単位はメートル（m）。小数3桁。
+        ・ターゲット高（プリズム等）は<strong>一定</strong>を前提。<br>
+        ・T.P（途中B.S）対応。直前のF.Sで得たGHを新BMとしてI.H再計算。<br>
+        ・CSVは<strong>英数字</strong>ヘッダー＆UTF-8 BOM付与でExcel文字化け対策。<br>
       </p>
-      <details>
-        <summary>簡易テストの結果ログ</summary>
-        <div id="testLog" class="tests">（まだテスト未実行）</div>
-      </details>
     </div>
   </div>
 
-  <p class="footer">© 2025 TS Leveling</p>
+  <p class="footer">© 2025 TS Leveling – Public</p>
 </div>
 
 <script src="./app.js"></script>
 <script>
-  // PWA: Service Worker register (same folder scope)
   if ('serviceWorker' in navigator) {
     try { navigator.serviceWorker.register('./service-worker.js'); } catch(e) { console.warn(e); }
   }

@@ -3,9 +3,7 @@
 const tbody = document.getElementById('tbody');
 const outBody = document.getElementById('outBody');
 const bmGH = document.getElementById('bmGH');
-const tgtH = document.getElementById('tgtH');
 const ihOut = document.getElementById('ihOut');
-const testLog = document.getElementById('testLog');
 
 function addRow(kind='B.S', dh=''){
   const tr = document.createElement('tr');
@@ -17,8 +15,8 @@ function addRow(kind='B.S', dh=''){
         <option ${kind==='F.S'?'selected':''}>F.S</option>
       </select>
     </td>
-    <td><input type="number" class="dh" step="0.001" placeholder="例: +2.400 や -3.416" value="${dh}"/></td>
-    <td><input type="text" class="memo" placeholder="測点名やメモ（例：TP1, P-12）"/></td>
+    <td><input type="number" class="dh" step="0.001" placeholder="e.g. +2.400 or -3.416" value="${dh}"/></td>
+    <td><input type="text" class="memo" placeholder="Point label or note (e.g. P-12, TP1)"/></td>
     <td><button class="btn" onclick="this.closest('tr').remove(); renumber();">✕</button></td>
   `;
   tbody.appendChild(tr);
@@ -41,35 +39,24 @@ function parseRows(){
     dh: parseFloat(tr.querySelector('.dh').value),
     memo: tr.querySelector('.memo').value.trim()
   }));
-  if(rows.length===0) throw new Error('行がありません。最低1行（B.S）を追加してください。');
-  if(Number.isNaN(parseFloat(bmGH.value))) throw new Error('BM標高が未入力です。');
-  if(rows[0].kind !== 'B.S') throw new Error('最初の行は必ずB.Sにしてください。');
-  if(Number.isNaN(rows[0].dh)) throw new Error('B.S の ΔH が未入力です。');
+  if(rows.length===0) throw new Error('No rows. Add at least one B.S row.');
+  if(Number.isNaN(parseFloat(bmGH.value))) throw new Error('BM GH is empty.');
+  if(rows[0].kind !== 'B.S') throw new Error('First row must be B.S.');
+  if(Number.isNaN(rows[0].dh)) throw new Error('B.S DeltaH is empty.');
   for(let i=1;i<rows.length;i++){
-    if(Number.isNaN(rows[i].dh)) throw new Error(`${i+1}行目の ΔH が未入力です。`);
-    if(rows[i].kind==='B.S' && rows[i-1].kind==='B.S') throw new Error(`${i}行目と${i+1}行目に連続してB.Sは設定できません。間にF.Sを入れてください。`);
+    if(Number.isNaN(rows[i].dh)) throw new Error(`Row ${i+1}: DeltaH is empty.`);
+    if(rows[i].kind==='B.S' && rows[i-1].kind==='B.S') throw new Error(`Row ${i} and ${i+1} cannot both be B.S.`);
   }
   return rows;
 }
 
 function format(n){ return (Math.round(n*1000)/1000).toFixed(3); }
 
-// ===== core compute =====
 function compute(){
   const rows = parseRows();
   const autoInvert = document.getElementById('autoInvert').checked;
-  const useTarget = document.getElementById('useTarget').checked;
-  const h = parseFloat(tgtH.value);
-  if(useTarget && Number.isNaN(h)){
-    throw new Error('ターゲット高補正ON時は、ターゲット高（h）を入力してください。');
-  }
-  // adjust
-  const adj = rows.map(r=>{
-    let dh = r.dh;
-    if(useTarget){ dh = dh - h; }
-    if(autoInvert){ dh = -dh; }
-    return {...r, dhAdj: dh};
-  });
+
+  const adj = rows.map(r=>({ ...r, dhAdj: autoInvert ? -r.dh : r.dh }));
 
   const results = [];
   let IH = null;
@@ -80,15 +67,15 @@ function compute(){
     const r = adj[i];
     if(r.kind==='B.S'){
       if(i>0){
-        if(lastFS_GH==null) throw new Error(`${i+1}行目のB.Sの直前にF.Sが必要です。`);
-        currentBM = lastFS_GH; // TP
+        if(lastFS_GH==null) throw new Error(`Row ${i+1}: F.S before this B.S is required.`);
+        currentBM = lastFS_GH;
       }
-      IH = currentBM + r.dhAdj; // IH = BM + BS
-    }else{
-      if(IH==null) throw new Error(`${i+1}行目(F.S)の前にB.Sが必要です。`);
+      IH = currentBM + r.dhAdj;
+    } else {
+      if(IH==null) throw new Error(`Row ${i+1}: B.S is required before F.S.`);
       const gh = IH - r.dhAdj;
       lastFS_GH = gh;
-      results.push({ outIndex: results.length+1, inRow: i+1, kind: 'F.S', name: r.memo || `測点${results.length+1}`, GH: gh });
+      results.push({ outIndex: results.length+1, inRow: i+1, name: r.memo || `P-${results.length+1}`, GH: gh });
     }
   }
 
@@ -99,12 +86,11 @@ function compute(){
     const tr = document.createElement('tr');
     tr.id = `out-row-${res.outIndex}`;
     tr.dataset.inRow = String(res.inRow);
-    tr.innerHTML = `<td>${res.outIndex}</td><td>R${res.inRow} (F.S) <button class="btn" data-jump="${res.inRow}">⇢</button></td><td>${res.name}</td><td>${format(res.GH)}</td>`;
+    tr.innerHTML = `<td>${res.outIndex}</td><td>R${res.inRow} (FS) <button class="btn" data-jump="${res.inRow}">⇢</button></td><td>${res.name}</td><td>${format(res.GH)}</td>`;
     outBody.appendChild(tr);
   });
-  // output -> input
   outBody.querySelectorAll('button[data-jump]').forEach(btn=>{
-    btn.addEventListener('click',(e)=>{
+    btn.addEventListener('click', (e)=>{
       const r = e.currentTarget.getAttribute('data-jump');
       const target = document.getElementById(`row-${r}`);
       if(target){
@@ -113,7 +99,6 @@ function compute(){
       }
     });
   });
-  // input -> output highlight
   [...tbody.querySelectorAll('tr')].forEach((tr,i)=>{
     const inRow = i+1;
     tr.onfocusin = ()=>{
@@ -129,16 +114,17 @@ function compute(){
   return {IH, rows: adj, results};
 }
 
-// ===== CSV / Share =====
 function toCSV(){
   const rows = parseRows();
   const res = compute();
-  let csv = 'No,種別,入力ΔH(TS表示),補正後ΔH(器高式),測点名/メモ\n';
-  rows.forEach((r,i)=>{ csv += `${i+1},${r.kind},${r.dh},${format(res.rows[i].dhAdj)},${r.memo||''}\n`; });
-  csv += `\nI.H(m),${res.IH!=null?format(res.IH):''}\n`;
-  csv += `\n出力No,入力行,測点名,計算GH(m)\n`;
-  res.results.forEach(o=>{ csv += `${o.outIndex},R${o.inRow} (F.S),${o.name},${format(o.GH)}\n`; });
-  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  let csv = '';
+  csv += 'No,Type,DeltaH_TS(m),DeltaH_forHI(m),Note\n';
+  rows.forEach((r,i)=>{ csv += `${i+1},${r.kind},${r.dh},${format(res.rows[i].dhAdj)},${(r.memo||'').replace(/[,\\n]/g,' ')}\n`; });
+  csv += `\nIH(m),${res.IH!=null?format(res.IH):''}\n`;
+  csv += `\nOutNo,InputRow,Point,GH(m)\n`;
+  res.results.forEach(o=>{ csv += `${o.outIndex},R${o.inRow} (FS),${(o.name||'').replace(/[,\\n]/g,' ')},${format(o.GH)}\n`; });
+  const BOM = new Uint8Array([0xEF,0xBB,0xBF]);
+  const blob = new Blob([BOM, csv],{type:'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'ts_leveling.csv';
@@ -148,9 +134,7 @@ function toCSV(){
 function shareLink(){
   const state = {
     bm: parseFloat(bmGH.value),
-    h: tgtH.value || null,
     autoInvert: document.getElementById('autoInvert').checked,
-    useTarget: document.getElementById('useTarget').checked,
     rows: [...tbody.querySelectorAll('tr')].map(tr=>({
       kind: tr.querySelector('.kind').value,
       dh: tr.querySelector('.dh').value,
@@ -160,10 +144,9 @@ function shareLink(){
   const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
   location.hash = b64;
   navigator.clipboard?.writeText(location.href);
-  alert('このページURLをコピーしました。共有できます。');
+  alert('Copied shareable URL.');
 }
 
-// ===== Sticky left =====
 function recalcStickyLeft(){
   const thead = tbody.closest('table').querySelector('thead tr');
   if(!thead) return;
@@ -174,54 +157,7 @@ function recalcStickyLeft(){
 }
 window.addEventListener('resize', recalcStickyLeft);
 
-// ===== tests =====
-function log(line){ testLog.textContent += (testLog.textContent?"\n":"") + line; }
-function clearLog(){ testLog.textContent = ''; }
-
-function runTests(){
-  clearLog();
-  try{
-    // Test1: basic
-    bmGH.value = 100.000;
-    tgtH.value = '';
-    document.getElementById('autoInvert').checked = true;
-    document.getElementById('useTarget').checked = false;
-    tbody.innerHTML='';
-    addRow('B.S', '+2.400');
-    addRow('F.S', '+4.648');
-    addRow('F.S', '+3.742');
-    addRow('F.S', '+3.455');
-    const r1 = compute();
-    if(r1.results.length!==3) throw new Error('Test1: F.S件数が一致しません');
-    log('Test1: OK');
-
-    // Test2: TP
-    tbody.innerHTML='';
-    addRow('B.S', '+1.000');   // R1
-    addRow('F.S', '+2.000');   // R2 -> GH1
-    addRow('B.S', '+0.500');   // R3 : TP1
-    addRow('F.S', '+1.000');   // R4 -> GH2
-    const r2 = compute();
-    if(r2.results.length!==2) throw new Error('Test2: 出力件数不正');
-    const mapOK = [...outBody.querySelectorAll('tr')].every(tr=>{
-      const inRow = Number(tr.dataset.inRow);
-      return tbody.querySelector(`#row-${inRow}`)!=null;
-    });
-    if(!mapOK) throw new Error('Test2: 入出力リンク不正');
-    log('Test2: OK');
-
-    // Test3: target height
-    document.getElementById('useTarget').checked = true;
-    tgtH.value = '1.500';
-    const r3 = compute();
-    if(!r3 || typeof r3.IH==='undefined') throw new Error('Test3: 返り値不正');
-    log('Test3: OK');
-
-    log('全テスト: OK');
-  }catch(err){ log('失敗: '+err.message); }
-}
-
-// ===== hooks =====
+// hooks
 document.getElementById('addRow').onclick = ()=>addRow(tbody.children.length? 'F.S':'B.S');
 document.getElementById('calc').onclick = ()=>{ try{ compute(); }catch(e){ alert(e.message); }};
 document.getElementById('exportCsv').onclick = ()=>{ try{ toCSV(); }catch(e){ alert(e.message); }};
@@ -245,7 +181,6 @@ document.getElementById('example').onclick = ()=>{
   if(trs[4]) trs[4].querySelector('.memo').value = 'P-3';
   recalcStickyLeft();
 };
-document.getElementById('runTests').onclick = runTests;
 
 // init
 if(location.hash.slice(1)){
@@ -253,9 +188,7 @@ if(location.hash.slice(1)){
     const json = decodeURIComponent(escape(atob(location.hash.slice(1))));
     const state = JSON.parse(json);
     bmGH.value = state.bm;
-    tgtH.value = state.h ?? '';
     document.getElementById('autoInvert').checked = !!state.autoInvert;
-    document.getElementById('useTarget').checked = !!state.useTarget;
     tbody.innerHTML = '';
     state.rows.forEach(r=>addRow(r.kind, r.dh));
     [...tbody.querySelectorAll('tr')].forEach((tr,idx)=>{ tr.querySelector('.memo').value = state.rows[idx]?.memo || ''; });

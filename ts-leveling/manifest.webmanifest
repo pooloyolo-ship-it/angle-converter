@@ -1,7 +1,7 @@
 
 {
-  "name": "TS水準測量（器高式）",
-  "short_name": "TSレベル",
+  "name": "TS Leveling (HI method)",
+  "short_name": "TS Level",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
