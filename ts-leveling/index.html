@@ -4,6 +4,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="format-detection" content="telephone=no" />
 <title>TS水準測量（器高式）計算 – 公開版</title>
 <link rel="manifest" href="./manifest.webmanifest" />
 <style>
@@ -15,13 +16,23 @@
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 4px 16px rgba(0,0,0,.06);padding:18px;margin:14px 0}
   .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   .col{flex:1 1 240px}
-  label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:6px}
-  input[type="number"], input[type="text"], select{width:100%;background:#ffffff;border:1px solid var(--border);color:var(--ink);padding:10px 12px;border-radius:10px;outline:none}
-  .btn{appearance:none;border:1px solid #c7d2fe;background:#e0e7ff;color:#111827;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:.9rem}
+  label{display:block;font-size:.95rem;color:var(--muted);margin-bottom:6px}
+  input[type="number"], input[type="text"], select{width:100%;background:#ffffff;border:1px solid var(--border);color:var(--ink);padding:12px;border-radius:10px;outline:none;font-size:16px}
+  .btn{appearance:none;border:1px solid #c7d2fe;background:#e0e7ff;color:#111827;padding:10px 14px;border-radius:10px;cursor:pointer;font-size:16px}
   .btn:hover{filter:brightness(1.05)}
   .btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}
   .btn.ghost{background:transparent;border-color:#c7d2fe}
   table{width:100%;border-collapse:separate;border-spacing:0 8px}
+  .tbl-in, .tbl-out{table-layout:fixed}
+  :root{
+    --w-idx: clamp(32px, 6vw, 44px);
+    --w-type: clamp(96px, 22vw, 140px);
+    --w-dh: clamp(160px, 34vw, 260px);
+    --w-memo: clamp(90px, 20vw, 130px);
+    --w-del: clamp(48px, 10vw, 64px);
+    --w-inrow: clamp(132px, 28vw, 180px);
+    --w-gh: clamp(120px, 26vw, 160px);
+  }
   th,td{text-align:left;padding:10px 10px}
   thead th{font-size:.9rem;color:#6b7280;background:#ffffff;position:sticky;top:0;z-index:2}
   tbody tr{background:#ffffff;border:1px solid var(--border)}
@@ -36,6 +47,17 @@
   @keyframes pulseBg{0%{background:#eef2ff}30%{background:#dbeafe}100%{background:#ffffff}}
   .table-wrap{overflow:auto}
   .sticky-name{position:sticky;left:var(--sticky-left);z-index:1;background:#ffffff}
+  @media (max-width: 420px){
+    :root{
+      --w-type: clamp(96px, 24vw, 136px);
+      --w-dh: clamp(150px, 40vw, 240px);
+      --w-memo: clamp(84px, 18vw, 120px);
+      --w-inrow: clamp(120px, 34vw, 170px);
+    }
+    th,td{padding:8px 8px}
+    input[type="number"], input[type="text"], select{padding:10px}
+  }
+  tbody input, tbody select, tbody button{position:relative; z-index:3}
 </style>
 </head>
 <body>
@@ -45,7 +67,7 @@
     <div class="row">
       <div class="col">
         <label>ベンチマーク標高（BM GH, m）</label>
-        <input id="bmGH" type="number" step="0.001" value="100.000" />
+        <input id="bmGH" type="number" step="0.001" inputmode="decimal" pattern="[-+0-9.]*" autocomplete="off" />
       </div>
     </div>
     <div class="row"><label><input id="autoInvert" type="checkbox" checked />TSの高低差の符号を自動で器高式用（＋↔−）に反転</label></div>
@@ -63,12 +85,19 @@
   <div class="card">
     <div class="tag">入力：TS表示の高低差（1行目=B.S@BM、以降=F.S@測点。途中B.S可=ターン/TP）</div>
     <div class="table-wrap">
-      <table>
+      <table class="tbl-in">
+        <colgroup>
+          <col style="width:var(--w-idx)">
+          <col style="width:var(--w-type)">
+          <col style="width:var(--w-dh)">
+          <col style="width:var(--w-memo)">
+          <col style="width:var(--w-del)">
+        </colgroup>
         <thead>
           <tr>
             <th>#</th>
-            <th>Type</th>
-            <th>DeltaH TS (m)</th>
+            <th>種別</th>
+            <th>高低差 ΔH（TS表示, m）</th>
             <th class="sticky-name">Point/Note</th>
             <th>Del</th>
           </tr>
@@ -88,9 +117,15 @@
         </div>
       </div>
       <div class="table-wrap">
-        <table>
+        <table class="tbl-out">
+          <colgroup>
+            <col style="width:var(--w-idx)">
+            <col style="width:var(--w-inrow)">
+            <col>
+            <col style="width:var(--w-gh)">
+          </colgroup>
           <thead>
-            <tr><th>#</th><th>Input Row</th><th class="sticky-name">Point</th><th>GH (m)</th></tr>
+            <tr><th>#</th><th>入力行</th><th class="sticky-name">測点名</th><th>計算GH (m)</th></tr>
           </thead>
           <tbody id="outBody"></tbody>
         </table>
