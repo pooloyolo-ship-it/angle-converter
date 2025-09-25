@@ -93,15 +93,32 @@ function compute(){
 
 function toCSV(){
   const rows = parseRows();
-  const res = compute();
-  let csv = '';
-  csv += 'No,Type,DeltaH_TS(m),DeltaH_forHI(m),Note\\n';
-  rows.forEach((r,i)=>{ csv += `${i+1},${r.kind},${r.dh},${format(res.rows[i].dhAdj)},${(r.memo||'').replace(/[\\r\\n,]/g,' ')}\\n`; });
-  csv += `\\nIH(m),${res.IH!=null?format(res.IH):''}\\n`;
-  csv += `\\nOutNo,InputRow,Point,GH(m)\\n`;
-  res.results.forEach(o=>{ csv += `${o.outIndex},R${o.inRow} (FS),${(o.name||'').replace(/[\\r\\n,]/g,' ')},${format(o.GH)}\\n`; });
+  const res = compute(); // 計算して最新状態を取得
+
+  // 入力行 → GH の対応を作る（FS 行にだけ GH がある）
+  const ghByInputRow = new Map();
+  res.results.forEach(o => ghByInputRow.set(o.inRow, o.GH));
+
+  // 単一の大きな表
+  let csv = 'Row,Type,DeltaH_TS(m),DeltaH_forHI(m),Point,GH(m)\n';
+
+  rows.forEach((r, i) => {
+    const rowNo = i + 1;
+    const kind = r.kind;
+    const dhTS = r.dh;
+    const dhHI = res.rows[i].dhAdj;
+    const point = (r.memo || (kind === 'F.S' ? `P-${rowNo}` : '')).replace(/[\r\n,]/g, ' ');
+    const gh = ghByInputRow.has(rowNo) ? (Math.round(ghByInputRow.get(rowNo) * 1000) / 1000).toFixed(3) : '';
+    csv += `${rowNo},${kind},${dhTS},${dhHI},${point},${gh}\n`;
+  });
+
+  // IH を最後に追記
+  csv += `\nIH(m),${res.IH != null ? (Math.round(res.IH * 1000) / 1000).toFixed(3) : ''}\n`;
+
+  // Excel 文字化け対策
   const BOM = new Uint8Array([0xEF,0xBB,0xBF]);
-  const blob = new Blob([BOM, csv],{type:'text/csv;charset=utf-8;'});
+  const blob = new Blob([BOM, csv], { type: 'text/csv;charset=utf-8;' });
+
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'ts_leveling.csv';
