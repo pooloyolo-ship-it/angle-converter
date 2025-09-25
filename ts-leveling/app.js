@@ -128,7 +128,7 @@ function toCSV(){
 document.getElementById('addRow').onclick = ()=>addRow(tbody.children.length? 'F.S':'B.S');
 document.getElementById('calc').onclick = ()=>{ try{ compute(); }catch(e){ alert(e.message); }};
 document.getElementById('exportCsv').onclick = ()=>{ try{ toCSV(); }catch(e){ alert(e.message); }};
-document.getElementById('share').onclick = ()=>{ alert('GitHub Pages に公開後にお使いください。\\n(ローカルファイルでは共有URLは発行されません)'); };
+document.getElementById('share').onclick = ()=>{ try{ shareLink(); }catch(e){ alert(e.message); }};
 document.getElementById('clear').onclick = ()=>{ tbody.innerHTML=''; outBody.innerHTML=''; ihOut.value=''; };
 document.getElementById('example').onclick = ()=>{
   tbody.innerHTML = '';
