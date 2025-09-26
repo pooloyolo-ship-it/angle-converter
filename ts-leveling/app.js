@@ -125,6 +125,28 @@ function toCSV(){
   a.click();
 }
 
+function shareLink(){
+  const state = {
+    bm: parseFloat(bmGH.value),
+    autoInvert: document.getElementById('autoInvert').checked,
+    rows: [...tbody.querySelectorAll('tr')].map(tr => ({
+      kind: tr.querySelector('.kind').value,
+      dh:   tr.querySelector('.dh').value,
+      memo: tr.querySelector('.memo').value
+    }))
+  };
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+
+  // 公開URLで共有できるリンクを生成（file:// でも公開URLにする）
+  const PUBLIC_BASE = 'https://pooloyolo-ship-it.github.io/angle-converter/ts-leveling/';
+  const link = (location.protocol === 'file:')
+    ? (PUBLIC_BASE + '#' + b64)
+    : (() => { const u = new URL(location.href); u.hash = b64; return u.toString(); })();
+
+  navigator.clipboard?.writeText(link);
+  alert('共有URLをコピーしました：\n' + link);
+}
+
 document.getElementById('addRow').onclick = ()=>addRow(tbody.children.length? 'F.S':'B.S');
 document.getElementById('calc').onclick = ()=>{ try{ compute(); }catch(e){ alert(e.message); }};
 document.getElementById('exportCsv').onclick = ()=>{ try{ toCSV(); }catch(e){ alert(e.message); }};
