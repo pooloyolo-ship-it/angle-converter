@@ -124,6 +124,39 @@ function toCSV(){
   a.download = 'ts_leveling.csv';
   a.click();
 }
+// === UTF-8安全なBase64（非推奨APIなし） ===
+function toB64UTF8(str){
+  return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+}
+function fromB64UTF8(b64){
+  return new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)));
+}
+// 共有URLの #hash から状態を復元（ページ読込時に1回だけ実行）
+(function restoreFromHash(){
+  if(!location.hash) return;
+  try{
+    const json  = fromB64UTF8(location.hash.slice(1));
+    const state = JSON.parse(json);
+
+    if(state.bm != null) bmGH.value = state.bm;
+    document.getElementById('autoInvert').checked = !!state.autoInvert;
+
+    // 入力行を復元
+    tbody.innerHTML = '';
+    (state.rows || []).forEach(r => addRow(r.kind, r.dh));
+
+    // メモ欄を復元
+    const trs = [...tbody.querySelectorAll('tr')];
+    (state.rows || []).forEach((r,i)=>{
+      if(trs[i]) trs[i].querySelector('.memo').value = r.memo || '';
+    });
+
+    // 復元後に自動計算
+    try { compute(); } catch(_) {}
+  } catch(e){
+    console.warn('restore failed:', e);
+  }
+})();
 
 function shareLink(){
   const state = {
