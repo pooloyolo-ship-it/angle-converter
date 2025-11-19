@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>器高式 水準測量計算ツール</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 1rem;
+      max-width: 1100px;
+      margin-inline: auto;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: 1.3rem;
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+    }
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      background: #fafafa;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.4rem;
+      font-size: 0.9rem;
+    }
+    input[type="number"],
+    input[type="text"] {
+      padding: 0.35rem;
+      font-size: 1rem;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+    .row > div {
+      flex: 1;
+      min-width: 160px;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      border-radius: 4px;
+      border: 1px solid #999;
+      cursor: pointer;
+      background: #fff;
+    }
+    button + button {
+      margin-left: 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.3rem;
+      text-align: center;
+    }
+    th {
+      font-weight: 600;
+      background: #f0f0f0;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .small-note {
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .scroll-table {
+      max-height: 360px;
+      overflow: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background: #fff;
+    }
+    .highlight {
+      font-weight: bold;
+    }
+    .tp-row {
+      background-color: #eef7ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>器高式 水準測量計算ツール</h1>
+
+  <!-- 基本条件 -->
+  <div class="card">
+    <h2>基本条件（BM・初回BS）</h2>
+    <div class="row">
+      <div>
+        <label>
+          基準点の標高 BM [m]<br>
+          <input type="number" id="bm" step="0.001" placeholder="例）100.000">
+        </label>
+      </div>
+      <div>
+        <label>
+          初回の後視 BS [m]<br>
+          <input type="number" id="bs" step="0.001" placeholder="例）1.345">
+        </label>
+      </div>
+    </div>
+    <p class="small-note">
+      器高 IH = BM + BS、各測点の地盤高 GH = IH − FS で計算します。<br>
+      T.P行で「TP用BS[m]」を入力すると、その行の GH ＋ TP用BS を新しい器高IHとして次行以降に引き継ぎます。
+    </p>
+    <p>
+      現在の器高 IH [m]：<span class="highlight" id="ih-display">---</span>
+    </p>
+    <button id="calc-btn">すべて再計算</button>
+  </div>
+
+  <!-- 計画高一括設定 -->
+  <div class="card">
+    <h2>計画高FHの一括設定</h2>
+    <div class="row">
+      <div>
+        <label>
+          共通計画高 FH [m]<br>
+          <input type="number" id="common-fh" step="0.001" placeholder="例）99.800">
+        </label>
+      </div>
+      <div style="align-self:flex-end;">
+        <button id="copy-fh-btn">全行にコピー</button>
+      </div>
+    </div>
+    <p class="small-note">
+      ※ ボタンを押しても自動再計算はされません。「すべて再計算」を押して差を更新してください。
+    </p>
+  </div>
+
+  <!-- 測点一覧 -->
+  <div class="card">
+    <h2>測点一覧</h2>
+    <p class="small-note">
+      FS(m) は現器高IHに対するスタッフ読みです。<br>
+      T.Pになる行では「TP用BS(m)」に新しい器械から同じ点を読んだBSを入力すると、その行のGHを基準に新しいIHに切り替わります。
+    </p>
+    <button id="add-row-btn">＋ 測点を追加</button>
+    <div class="scroll-table">
+      <table>
+        <thead>
+          <tr>
+            <th>測点名</th>
+            <th>TP用BS<br>[m]</th>
+            <th>器械高 IH<br>[m]</th>
+            <th>FS<br>[m]</th>
+            <th>地盤高 GH<br>[m]</th>
+            <th>計画高 FH<br>[m]</th>
+            <th>差 GH−FH<br>[m]</th>
+            <th>備考</th>
+          </tr>
+        </thead>
+        <tbody id="points-body">
+          <!-- JSで追加 -->
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:0.5rem;">
+      <button id="export-csv-btn">CSVをダウンロード</button>
+    </div>
+  </div>
+
+  <script>
+    const bmInput = document.getElementById('bm');
+    const bsInput = document.getElementById('bs');
+    const ihDisplay = document.getElementById('ih-display');
+    const calcBtn = document.getElementById('calc-btn');
+    const addRowBtn = document.getElementById('add-row-btn');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+    const pointsBody = document.getElementById('points-body');
+    const commonFhInput = document.getElementById('common-fh');
+    const copyFhBtn = document.getElementById('copy-fh-btn');
+
+    function addPointRow(defaultName = "") {
+      const tr = document.createElement('tr');
+
+      tr.innerHTML = `
+        <td>
+          <input type="text" class="pt-name" placeholder="例）P1" value="${defaultName}">
+        </td>
+        <td>
+          <input type="number" class="pt-tpbs" step="0.001" placeholder="T.PでのBS">
+        </td>
+        <td class="pt-ih">---</td>
+        <td>
+          <input type="number" class="pt-fs" step="0.001" placeholder="FS">
+        </td>
+        <td class="pt-gh">---</td>
+        <td>
+          <input type="number" class="pt-fh" step="0.001" placeholder="計画高FH">
+        </td>
+        <td class="pt-diff">---</td>
+        <td>
+          <input type="text" class="pt-note" placeholder="例）TPなど">
+        </td>
+      `;
+
+      pointsBody.appendChild(tr);
+    }
+
+    // 初期行
+    addPointRow("P1");
+    addPointRow("P2");
+    addPointRow("P3");
+
+    // 一括計算
+    function recalcAll() {
+      const bm = parseFloat(bmInput.value);
+      const firstBs = parseFloat(bsInput.value);
+
+      if (isNaN(bm) || isNaN(firstBs)) {
+        alert('BM と 初回のBS を入力してください。');
+        return;
+      }
+
+      let currentIH = bm + firstBs;
+      ihDisplay.textContent = currentIH.toFixed(3);
+
+      const rows = pointsBody.querySelectorAll('tr');
+
+      rows.forEach(row => {
+        const fsInput = row.querySelector('.pt-fs');
+        const tpBsInput = row.querySelector('.pt-tpbs');
+        const fhInput = row.querySelector('.pt-fh');
+        const ihCell = row.querySelector('.pt-ih');
+        const ghCell = row.querySelector('.pt-gh');
+        const diffCell = row.querySelector('.pt-diff');
+
+        row.classList.remove('tp-row');
+
+        ihCell.textContent = currentIH.toFixed(3);
+
+        const fs = parseFloat(fsInput.value);
+        const fh = parseFloat(fhInput.value);
+        const tpBs = parseFloat(tpBsInput.value);
+
+        if (isNaN(fs)) {
+          ghCell.textContent = '---';
+          diffCell.textContent = '---';
+        } else {
+          const gh = currentIH - fs;
+          ghCell.textContent = gh.toFixed(3);
+
+          if (isNaN(fh)) {
+            diffCell.textContent = '---';
+          } else {
+            const diff = gh - fh;
+            diffCell.textContent = diff.toFixed(3);
+          }
+
+          if (!isNaN(tpBs)) {
+            row.classList.add('tp-row');
+            currentIH = gh + tpBs;
+          }
+        }
+      });
+
+      ihDisplay.textContent = currentIH.toFixed(3);
+    }
+
+    calcBtn.addEventListener('click', recalcAll);
+
+    addRowBtn.addEventListener('click', () => {
+      const rows = pointsBody.querySelectorAll('tr');
+      const index = rows.length + 1;
+      addPointRow(`P${index}`);
+    });
+
+    copyFhBtn.addEventListener('click', () => {
+      const commonFh = commonFhInput.value;
+      const rows = pointsBody.querySelectorAll('tr');
+      rows.forEach(row => {
+        const fhInput = row.querySelector('.pt-fh');
+        fhInput.value = commonFh;
+      });
+    });
+
+    exportCsvBtn.addEventListener('click', () => {
+      let csv = '';
+      const header = [
+        'PointName',
+        'TP_BS[m]',
+        'IH[m]',
+        'FS[m]',
+        'GH[m]',
+        'PlanHeightFH[m]',
+        'Diff_GH_minus_FH[m]',
+        'Note',
+        'BM[m]',
+        'First_BS[m]'
+      ];
+      csv += header.join(',') + '\r\n';
+
+      const bmVal = bmInput.value;
+      const bsVal = bsInput.value;
+
+      const rows = pointsBody.querySelectorAll('tr');
+
+      rows.forEach(row => {
+        const name = row.querySelector('.pt-name').value || '';
+        const tpBsStr = row.querySelector('.pt-tpbs').value;
+        const ihText = row.querySelector('.pt-ih').textContent;
+        const fsStr = row.querySelector('.pt-fs').value;
+        const ghText = row.querySelector('.pt-gh').textContent;
+        const fhStr = row.querySelector('.pt-fh').value;
+        const diffText = row.querySelector('.pt-diff').textContent;
+        const note = row.querySelector('.pt-note').value || '';
+
+        const tpBsVal = tpBsStr !== '' ? tpBsStr : '';
+        const ihVal = ihText !== '---' ? ihText : '';
+        const fsVal = fsStr !== '' ? fsStr : '';
+        const ghVal = ghText !== '---' ? ghText : '';
+        const fhVal = fhStr !== '' ? fhStr : '';
+        const diffVal = diffText !== '---' ? diffText : '';
+
+        const line = [
+          `"${name.replace(/"/g, '""')}"`,
+          tpBsVal,
+          ihVal,
+          fsVal,
+          ghVal,
+          fhVal,
+          diffVal,
+          `"${note.replace(/"/g, '""')}"`,
+          bmVal,
+          bsVal
+        ];
+        csv += line.join(',') + '\r\n';
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const now = new Date();
+      const filename =
+        'leveling_ih_' +
+        now.getFullYear().toString() +
+        String(now.getMonth() + 1).padStart(2, '0') +
+        String(now.getDate()).padStart(2, '0') +
+        '.csv';
+
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  </script>
+</body>
+</html>
