@@ -61,11 +61,13 @@
     button + button {
       margin-left: 0.5rem;
     }
-    table {
+        table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 0.5rem;
       font-size: 0.85rem;
+      /* スマホで横スクロールできるように、最低幅を確保 */
+      min-width: 720px;
     }
     th, td {
       border: 1px solid #ddd;
@@ -85,11 +87,29 @@
     }
     .scroll-table {
       max-height: 360px;
-      overflow: auto;
+      overflow-x: auto;   /* 横方向スクロールを許可 */
+      overflow-y: hidden;
       border: 1px solid #ddd;
       border-radius: 4px;
       background: #fff;
     }
+
+    /* スマホ用に少しだけコンパクトにする */
+    @media (max-width: 480px) {
+      table {
+        font-size: 0.75rem;
+        min-width: 680px;
+      }
+      th, td {
+        padding: 0.2rem;
+      }
+      input[type="number"],
+      input[type="text"] {
+        font-size: 0.8rem;
+        padding: 0.2rem;
+      }
+    }
+
     .highlight {
       font-weight: bold;
     }
